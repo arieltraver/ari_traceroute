@@ -205,6 +205,12 @@ func Traceroute(dest string, options *TracerouteOptions, c ...chan TracerouteHop
 		if err != nil {
 			return result, err
 		}
+
+		/*
+		THIS IS WHERE PARIS TRACEROUTE MODIFICATIONS CAN BE MADE
+		using: syscall.Setsockopt
+		*/
+
 		// This sets the current hop TTL
 		syscall.SetsockoptInt(sendSocket, 0x0, syscall.IP_TTL, ttl)
 		// This sets the timeout to wait for a response from the remote host
@@ -216,6 +222,13 @@ func Traceroute(dest string, options *TracerouteOptions, c ...chan TracerouteHop
 		// Bind to the local socket to listen for ICMP packets
 		syscall.Bind(recvSocket, &syscall.SockaddrInet4{Port: options.Port(), Addr: socketAddr})
 
+		/*
+		 :In UDP probes, it is the checksum field. This requires manipulating the payload
+		to yield the desired checksum, as packets with an incorrect checksum are liable
+		to be discarded."
+		GOAL: replace "[]byte{0x0}" with a modified payload that keeps the checksum constant
+			  print out the checksum each time
+		*/
 		// Send a single null byte UDP packet
 		syscall.Sendto(sendSocket, []byte{0x0}, 0, &syscall.SockaddrInet4{Port: options.Port(), Addr: destAddr})
 
