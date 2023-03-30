@@ -8,6 +8,8 @@ import (
 	"net"
 	"os"
 	"fmt"
+	"github.com/aeden/traceroute"
+	"strconv"
 )
 
 func checkErrConn(c net.Conn, err error) {
@@ -19,9 +21,19 @@ func checkErrConn(c net.Conn, err error) {
 
 // Says hi
 func sayhi(c net.Conn) {
-	_, err := io.WriteString(c, "hi\n") //send text to your connection
-	fmt.Println("hi")
-	checkErrConn(c, err)
+	options := &traceroute.TracerouteOptions{}
+	options.SetTimeoutMs(5)
+	fmt.Println(options.Port())
+	result, err := traceroute.Traceroute("wellesley.edu", options)
+	fmt.Println("done trace")
+	if err != nil {
+		log.Println(err)
+	}
+	for i, hop := range(result.Hops) {
+		fmt.Print(strconv.Itoa(i) + "th hop: " + hop.Host + "\n")
+	}
+	_, err2 := io.WriteString(c, "hi\n") //send text to your connection
+	checkErrConn(c, err2)
 }
 
 //connect to host
