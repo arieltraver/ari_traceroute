@@ -17,12 +17,11 @@ func checkErrConn(c net.Conn, err error) {
 	}
 }
 
-// Sends the "ready" keyword to the leader.
+// Says hi
 func sayhi(c net.Conn) {
-	block := make(chan int, 1)
 	_, err := io.WriteString(c, "hi\n") //send text to your connection
+	fmt.Println("hi")
 	checkErrConn(c, err)
-	fmt.Println(<-block) //blocks forever, testing purposes
 }
 
 //connect to host

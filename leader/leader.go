@@ -51,9 +51,9 @@ func handleConnection(c net.Conn, sc *SafeChan, wait *sync.WaitGroup, start int)
 	defer wait.Done()
 	count := 0
 	seen := make([]bool, CHUNKS) //which chunks have we seen
-	defer wait.Done()
 	for {
 		if count >= CHUNKS {
+			c.Close()
 			return
 		}
 		//loop repeats as it digs through s for an unread slice
@@ -69,13 +69,10 @@ func handleConnection(c net.Conn, sc *SafeChan, wait *sync.WaitGroup, start int)
 }
 
 // Waits for new connections on port (specified by net.Listener). Serves each
-// worker with a different goroutine.
+// worker with a differecnt goroutine.
 func waitOnConnections(listener net.Listener, complete chan bool) {
 	var wait sync.WaitGroup
 	c := make(chan int, CHUNKS + 1) //store free chunks in a queue
-	for i := 0; i < CHUNKS; i++ {
-		c <- i
-	}
 	sc := &SafeChan{ranges:c} //lock to prevent data races
 
 	//connect to all monitors
@@ -89,6 +86,12 @@ func waitOnConnections(listener net.Listener, complete chan bool) {
 			go handleConnection(conn, sc, &wait, i) // each client served by a different routine
 		}
 	}
+
+	//add chunks to the channel once all hosts are connected
+	for i := 0; i < CHUNKS; i++ {
+		c <- i
+	}
+
 	wait.Wait()
 	//give an IP range to each monitor
 	//wait for all IPs to complete their range
