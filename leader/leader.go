@@ -6,56 +6,64 @@ import (
 	"net"
 	"os"
 	"sync"
+	"time"
 )
 
 var MONITORS int = 5 //number of chunks to divide file into
+var CHUNKS int = 10
 
-/*
-// a locked file, from which data will be sent to workers
-type SafeRanges struct {
-	ranges []bool
+// a locked channel
+type SafeChan struct {
+	ranges chan int
 	lock sync.Mutex
 }
 
-func findOpen(global *SafeRanges, local []bool) int {
-	global.lock.Lock()
-	ranges := global.ranges
-	for i, open := range(ranges) {
-		if open && local[i] {
-			ranges[i] = false
-			local[i] = false
-			global.lock.Unlock()
-			return i
-		}
-	}
-	global.lock.Unlock()
-	return -1
+func awaitPop(sc *SafeChan) int {
+	sc.lock.Lock()
+	c := <- sc.ranges
+	sc.lock.Unlock()
+	return c
 }
-*/
 
-// Talks to a single remote worker. Upon receiving a "ready" keyword, if there
-// are remaining file chunks, sends the worker a "map words" keyword and waits to
-// receive "ok map" confirmation keyword, both through sendJobname().
-// Upon receiving the worker's confirmation, grabs a file chunk and sends
-// it to the worker. If there are no file chunks left, communicates this
-// through a channel, writes "DONE" keyword to workers, closes the connection,
-// and returns.
-func handleConnection(c net.Conn, data chan int, wait *sync.WaitGroup) {
+func awaitPush(sc *SafeChan, i int) {
+	sc.lock.Lock()
+	sc.ranges <- i
+	sc.lock.Unlock()
+}
+
+//blocks till a slice is available for processing, puts it back if seen already
+func popCheckPush(sc *SafeChan, seen []bool) int {
+	sc.lock.Lock()
+	i := <- sc.ranges
+	if seen[i] {
+		sc.ranges <- i //put it back, we've seen it before.
+		sc.lock.Unlock()
+		return -1
+	} else {
+		seen[i] = true
+		sc.lock.Unlock()
+		return i //this is the chunk to work on
+	}
+}
+
+// Talks to a single remote monitor.
+func handleConnection(c net.Conn, sc *SafeChan, wait *sync.WaitGroup, start int) {
 	defer wait.Done()
 	count := 0
-	alldone := make(chan bool, 1)
+	seen := make([]bool, CHUNKS) //which chunks have we seen
+	defer wait.Done()
 	for {
-		select {
-		case <- data:
-			fmt.Println("...")
-			count++
-			if count >= MONITORS {
-				alldone <- true
-			}
-			wait.Done() //wait will be incremented every time data is filled
-		case <- alldone:
-			c.Close()
+		if count >= CHUNKS {
 			return
+		}
+		//loop repeats as it digs through s for an unread slice
+		s := popCheckPush(sc, seen) //take a number off, have we seen it? if not, put it back
+		if s >= 0 { //we have not seen it
+			count ++
+			fmt.Println(s)
+			start = s
+			time.Sleep(time.Millisecond * 50)
+			awaitPush(sc, start) //push the last number onto the channel
 		}
 	}
 }
@@ -64,40 +72,27 @@ func handleConnection(c net.Conn, data chan int, wait *sync.WaitGroup) {
 // worker with a different goroutine.
 func waitOnConnections(listener net.Listener, complete chan bool) {
 	var wait sync.WaitGroup
-
-	//allocate a channel for each worker
-	//new ranges of IPs will be sent on this channel
-	dataRanges := make([]chan int, MONITORS)
-	for i, _ := range dataRanges {
-		dataRanges[i] = make(chan int, 1)
+	c := make(chan int, CHUNKS + 1) //store free chunks in a queue
+	for i := 0; i < CHUNKS; i++ {
+		c <- i
 	}
+	sc := &SafeChan{ranges:c} //lock to prevent data races
 
-	//connect to all monitors and assign each a channel
-	for _, data := range(dataRanges) {
+	//connect to all monitors
+	for i := 0; i < MONITORS; i++ {
 		conn, err := listener.Accept()
 		if err != nil {
 			log.Println("failed connection")
 		} else { //if one connection fails you can have more
 			fmt.Println("new host joining:", conn.RemoteAddr())
-			go handleConnection(conn, data, &wait) // each client served by a different routine
+			wait.Add(1)
+			go handleConnection(conn, sc, &wait, i) // each client served by a different routine
 		}
 	}
-
+	wait.Wait()
 	//give an IP range to each monitor
 	//wait for all IPs to complete their range
 	//cycle through so that all monitors see all ranges
-	for i := 0; i < MONITORS; i++ {
-		j := i
-		for _, c := range(dataRanges) {
-			wait.Add(1)
-			c <- j
-			j++
-			if j >= MONITORS {
-				j = 0
-			}
-		}
-		wait.Wait() //wait for all monitors to complete their section
-	}
 	complete <- true
 }
 
