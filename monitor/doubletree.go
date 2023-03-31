@@ -43,6 +43,34 @@ func setUpSockets(port int) (int, int, error) {
 	return recvSocket, sendSocket, nil
 }
 
+/*
+func probe(source...)
+-randomly (or not) determine hopcount
+-lasthop = source
+-for i = 1; i <= hopcount; i++ {
+	code, hop := probeForward(...)
+	save hop information
+	seenLinks[lasthop.address + hop.address] = true //sort addresses to make unique
+	lasthop = hop
+	if code == 1:
+		register this ended the probe?
+		hopcount = i
+		break;
+	else if code == 2:
+		hopcount = i
+		register destination reached ended probe
+		break;
+	else:
+		seenNodes[hop.address] = true //add this to graph
+	
+}
+-for i = (new)hopcount; i >= 1; i-- {
+	code, hop := probeBackward(...)
+}
+
+
+*/
+
 //returns -1 if it encounters an error, 0 if the node is new, 1 if it hits a global stop, 2 if it hits dest
 func probeForward(source [4]byte, sendSock int, recSock int, dest string, ttl int, timeout int64, port int, packetSize int, GSS map[string]bool, LSS map[string]bool) (int, *traceroute.TracerouteHop) {
 	destAdd, err := destAddr(dest)
