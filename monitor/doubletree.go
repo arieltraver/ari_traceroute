@@ -88,6 +88,47 @@ func probeForward(source [4]byte, sendSock int, recSock int, dest string, ttl in
 	}
 }
 
+func probeBack(source [4]byte, sendSock int, recSock int, dest string, ttl int, timeout int64, port int, packetSize int, GSS map[string]bool, LSS map[string]bool) (int, *traceroute.TracerouteHop) {
+	destAdd, err := destAddr(dest)
+	if err != nil {
+		log.Println(err)
+		return -1, nil
+	}
+	//convert timeout
+	tv := syscall.NsecToTimeval(1000 * 1000 * timeout)
+	//set up time interval to wait for response
+	syscall.SetsockoptTimeval(recSock, syscall.SOL_SOCKET, syscall.SO_RCVTIMEO, &tv)
+
+	start := time.Now()
+	//send an emtpy UDP packet to the destination
+	syscall.Sendto(sendSock, []byte{0x0}, 0, &syscall.SockaddrInet4{Port: port, Addr: destAdd})
+
+	//receive a response
+	var p = make([]byte, packetSize)
+	n, from, err := syscall.Recvfrom(recSock, p, 0)
+	elapsed := time.Since(start)
+	if err != nil {
+		log.Println(err)
+		return -1, nil
+	} else {
+		//save the result in an object
+		addr := from.(*syscall.SockaddrInet4).Addr
+		hop := traceroute.TracerouteHop{Success: true, Address: addr, N: n, ElapsedTime: elapsed, TTL: ttl}
+		//DNS lookup of the IP
+		currHost, err := net.LookupAddr(hop.AddressString())
+		if err == nil {
+			hop.Host = currHost[0]
+		}
+		if addr == source {
+			return 2, &hop //reached destination
+		}
+		hopSource := string(destAdd[:]) + string(source[:]) //for hashing purposes
+		LSS[hopSource] = true //place in local stop set
+		GSS[hopSource] = true //place in global stop set
+		return 0, &hop
+	}
+}
+
 // Given a host name convert it to a 4 byte IP address.
 func destAddr(dest string) (destAddr [4]byte, err error) {
 	addrs, err := net.LookupHost(dest)
