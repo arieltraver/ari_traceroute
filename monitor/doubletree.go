@@ -44,6 +44,22 @@ func setUpSockets(port int) (int, int, error) {
 }
 
 /*
+func sendProbes(source, safe GSS, ips...) {
+	init safe LSS
+	init safe newNodes
+	init ports
+	init waitgroup
+	port = smallest port
+	for ip in ips:
+		preparesockets
+		waitgroup.add(1)
+		go probe(source, sockets,...)
+	waitgroup.wait
+	return safe LSS, safe newNodes
+}
+*/
+
+/*
 func probe(source...)
 -randomly (or not) determine hopcount
 -lasthop = source
@@ -52,23 +68,20 @@ func probe(source...)
 	save hop information
 	seenLinks[lasthop.address + hop.address] = true //sort addresses to make unique
 	lasthop = hop
-	if code == 1:
+	if code == 1: //node in GSS
 		register this ended the probe?
 		hopcount = i
 		break;
-	else if code == 2:
+	else if code == 2: //node is destination
 		hopcount = i
 		register destination reached ended probe
 		break;
-	else:
-		seenNodes[hop.address] = true //add this to graph
-	
+	else: //more to go
+		seenNodes[hop.address] = true //add this node to graph
 }
 -for i = (new)hopcount; i >= 1; i-- {
 	code, hop := probeBackward(...)
 }
-
-
 */
 
 //returns -1 if it encounters an error, 0 if the node is new, 1 if it hits a global stop, 2 if it hits dest
