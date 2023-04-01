@@ -22,7 +22,7 @@ func NewSet() *set {
 
 /*unlock the set*/
 func (s *set) Contains(item string) bool {
-	_, ok := s[item]
+	_, ok := s.mp[item]
 	return ok
 }
 
@@ -43,8 +43,8 @@ func (s1 *set) UnionWith(s2 *set) {
 
 //reduces the set to its intersection with another set
 func (s1 *set) IntersectWith(s2 *set) {
-	for key, _ := range(s2.mp) {
-		if !(s1.Contains(key)) {
+	for key, _ := range(s1.mp) {
+		if !(s2.Contains(key)) {
 			s1.Remove(key)
 		}
 	}
@@ -158,7 +158,7 @@ func (s *safeSet) ToCSV() string {
 	return str
 }
 
-func setTests() {
+func testSets() {
 	fruits := NewSafeSet()
 	vegetables := NewSafeSet()
 	fruits.Add("apple")
@@ -190,7 +190,7 @@ func setTests() {
 
 	//union (new set) test
 	ediblePlants := SafeUnion(vegetables, fruits)
-	fmt.Print(ediblePlants.ToCSV())
+	fmt.Print(ediblePlants.ToCSV()) //lettuce carrot tomato apple banana (no order)
 
 	//intersection (in place) test
 	vegetables.IntersectWith(fruits)
@@ -200,5 +200,9 @@ func setTests() {
 	//union (in place) test
 	ediblePlants.Remove("tomato")
 	ediblePlants.UnionWith(fruits) //bring back tomato
-	fmt.Print(ediblePlants.ToCSV()) //apple banana lettuce carrot tomato
+	fmt.Print(ediblePlants.ToCSV()) //apple banana lettuce carrot tomato (no order)
+}
+
+func main() {
+	testSets()
 }
