@@ -1,6 +1,10 @@
 //reference: https://www.davidkaya.com/sets-in-golang/
 package main
-import ("sync")
+import (
+	"sync"
+	"fmt"
+	"strings"
+)
 
 
 type set struct {
@@ -79,6 +83,16 @@ func IntersectionComplement(s1 *set, s2 *set) *set {
 	return s3
 }
 
+//turns a set into a CSV
+func (s *set) ToCSV() string {
+	str := &strings.Builder{}
+	for item, _ := range(s.mp) {
+		str.WriteString(item + ",")
+	}
+	str.WriteRune('\n')
+	return str.String()
+}
+
 type safeSet struct {
 	st *set
 	lock sync.Mutex
@@ -102,6 +116,13 @@ func (s *safeSet) Remove(item string) {
 	s.lock.Unlock()
 }
 
+func (s *safeSet) Contains(item string) bool {
+	s.lock.Lock()
+	t := s.st.Contains(item)
+	s.lock.Unlock()
+	return t
+}
+
 func (s1 *safeSet) UnionWith(s2 *safeSet) {
 	s1.lock.Lock()
 	s2.lock.Lock()
@@ -118,7 +139,7 @@ func (s1 *safeSet) IntersectWith(s2 *safeSet) {
 	s2.lock.Unlock()
 }
 
-func SafeUnion(s1 *safeSet, s2 *safeSet) {
+func SafeUnion(s1 *safeSet, s2 *safeSet) *safeSet {
 	s3 := NewSafeSet()
 	s1.lock.Lock()
 	s2.lock.Lock()
@@ -127,4 +148,57 @@ func SafeUnion(s1 *safeSet, s2 *safeSet) {
 	s1.lock.Unlock()
 	s2.lock.Unlock()
 	s3.lock.Unlock()
+	return s3
+}
+
+func (s *safeSet) ToCSV() string {
+	s.lock.Lock()
+	str := s.st.ToCSV()
+	s.lock.Unlock()
+	return str
+}
+
+func setTests() {
+	fruits := NewSafeSet()
+	vegetables := NewSafeSet()
+	fruits.Add("apple")
+	fruits.Add("banana")
+	fruits.Add("tomato")
+
+	//contains test
+	if (fruits.Contains("banana")) {
+		fmt.Println("banana is a fruit")
+	} else {
+		fmt.Println("why isn't banana a fruit?")
+	}
+
+	//remove null test
+	fruits.Remove("onion") //nothing should happen
+
+	vegetables.Add("lettuce")
+	vegetables.Add("carrot")
+	vegetables.Add("tomato")
+	vegetables.Add("pizza")
+
+	//remove non null test
+	vegetables.Remove("pizza")
+	if (!(vegetables.Contains("pizza"))){
+		fmt.Println("pizza is not a vegetable")
+	} else {
+		fmt.Println("pizza is a vegetable???")
+	}
+
+	//union (new set) test
+	ediblePlants := SafeUnion(vegetables, fruits)
+	fmt.Print(ediblePlants.ToCSV())
+
+	//intersection (in place) test
+	vegetables.IntersectWith(fruits)
+	fmt.Println("this is both a fruit and a vegetable:")
+	fmt.Print(vegetables.ToCSV()) //tomato, 
+
+	//union (in place) test
+	ediblePlants.Remove("tomato")
+	ediblePlants.UnionWith(fruits) //bring back tomato
+	fmt.Print(ediblePlants.ToCSV()) //apple banana lettuce carrot tomato
 }
