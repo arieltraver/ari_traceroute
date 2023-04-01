@@ -4,6 +4,7 @@ import (
 	"sync"
 	"fmt"
 	"strings"
+	"strconv"
 )
 
 
@@ -203,6 +204,33 @@ func testSets() {
 	fmt.Print(ediblePlants.ToCSV()) //apple banana lettuce carrot tomato (no order)
 }
 
+//to be used with Go's data race testing feature
+func testSetsConcurrent() {
+	s1 := NewSafeSet()
+	s2 := NewSafeSet()
+	s3 := NewSafeSet()
+	wg := &sync.WaitGroup{}
+	for i := 0; i < 50; i ++ {
+		wg.Add(1)
+		go testRoutine(s1, s2, s3, wg)
+	}
+	wg.Wait()
+}
+
+//tries every function, many concurrent adds/removes
+func testRoutine(s1 *safeSet, s2 *safeSet, s3 *safeSet, wg *sync.WaitGroup){
+	defer wg.Done()
+	for i := 0; i < 50; i++ {
+		fmt.Print(s3.ToCSV())
+		s1.Add(strconv.Itoa(i))
+		s1.Remove(strconv.Itoa(50 - i))
+		s1.UnionWith(s2)
+		s2.IntersectWith(s1)
+		s3 = SafeUnion(s1, s2) //is s3's old memory getting collected?...
+		s3.Add("test")
+	}
+}
+
 func main() {
-	testSets()
+	testSetsConcurrent()
 }
