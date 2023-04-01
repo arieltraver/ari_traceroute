@@ -1,0 +1,712 @@
+fatal error: all goroutines are asleep - deadlock!
+
+goroutine 1 [semacquire]:
+sync.runtime_Semacquire(0xc000136018?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:62 +0x27
+sync.(*WaitGroup).Wait(0xc000136010)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/waitgroup.go:116 +0xa5
+main.testSetsConcurrent()
+	/Users/arieltraver/Developer/ari_traceroute/set.go:217 +0x1d5
+main.main()
+	/Users/arieltraver/Developer/ari_traceroute/set.go:235 +0x25
+
+goroutine 18 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0xc00007e0d0?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 19 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x0?, 0x0?, 0x0?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.SafeUnion(0xc000118020, 0xc000118030)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:145 +0x7d
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:229 +0x1ba
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 20 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x10f0f40?, 0x60?, 0x10b4865?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 21 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x0?, 0x0?, 0x0?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.SafeUnion(0xc000118020, 0xc000118030)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:145 +0x7d
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:229 +0x1ba
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 22 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x10b4865?, 0x7f?, 0xc000118028?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Remove(0xc000118020, {0x112a43a, 0x2})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:115 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:226 +0x178
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 23 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x10f0f40?, 0x60?, 0x10b4865?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 24 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x0?, 0x0?, 0x0?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.SafeUnion(0xc000118020, 0xc000118030)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:145 +0x7d
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:229 +0x1ba
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 25 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x1?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c3a, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 26 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0xc000090000?, 0x0?, 0xc000103380?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).UnionWith(0xc000118020, 0xc000118030)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:128 +0x65
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:227 +0x18d
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 27 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0xc000092270?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 28 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0xc000118038?, 0x0?, 0x0?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).IntersectWith(0xc000118030, 0xc000118020)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:138 +0xcd
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:228 +0x1a5
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 29 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x10f0f40?, 0x60?, 0x10b4865?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c39, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 30 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x1?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 31 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0xc00020c000?, 0x0?, 0xc000103ba0?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118038)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118038)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).UnionWith(0xc000118020, 0xc000118030)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:130 +0xcd
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:227 +0x18d
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 32 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x1?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 33 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x1?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 34 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x10f0f40?, 0x60?, 0x10b4865?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 35 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0xc000204270?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 36 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x1?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 37 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x1?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 38 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x1?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 39 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x10f0f40?, 0x60?, 0x10b4865?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 40 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x1?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 41 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x1?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 42 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x1?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 43 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0xc000090180?, 0x40?, 0xc00014d040?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).UnionWith(0xc000118020, 0xc000118030)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:128 +0x65
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:227 +0x18d
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 44 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0xc000092340?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 45 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x1?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 46 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0xc000398000?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 47 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x1?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 48 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0xc00007e1a0?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 49 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x1?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 50 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0xc0002a0000?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 51 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x10f0f40?, 0x60?, 0x10b4865?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 52 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x10f0f40?, 0x60?, 0x10b4865?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 53 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x1?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 54 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x1?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 55 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x1?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 56 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x1?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 57 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x10f0f40?, 0x60?, 0x10b4865?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 58 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x10f0f40?, 0x60?, 0x10b4865?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 59 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0xc00012c820?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 60 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x1?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 61 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x1?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 62 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x1?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 63 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x1?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 64 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0x10f0f40?, 0x60?, 0x10b4865?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 65 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0xc00012c820?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 66 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0xc00012c750?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+
+goroutine 67 [sync.Mutex.Lock]:
+sync.runtime_SemacquireMutex(0xc00012c820?, 0xb4?, 0x100c790?)
+	/usr/local/Cellar/go/1.20.1/libexec/src/runtime/sema.go:77 +0x26
+sync.(*Mutex).lockSlow(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:171 +0x213
+sync.(*Mutex).Lock(0xc000118028)
+	/usr/local/Cellar/go/1.20.1/libexec/src/sync/mutex.go:90 +0x65
+main.(*safeSet).Add(0xc000118020, {0x1127c38, 0x1})
+	/Users/arieltraver/Developer/ari_traceroute/set.go:109 +0x66
+main.testRoutine(0x0?, 0x0?, 0xc000118040, 0xc000136010)
+	/Users/arieltraver/Developer/ari_traceroute/set.go:225 +0x147
+created by main.testSetsConcurrent
+	/Users/arieltraver/Developer/ari_traceroute/set.go:215 +0x7a
+exit status 2
