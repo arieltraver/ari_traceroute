@@ -1,5 +1,6 @@
 //reference: https://www.davidkaya.com/sets-in-golang/
 package main
+import ("sync")
 
 
 type set struct {
@@ -11,7 +12,7 @@ var exists = struct{}{}
 
 func NewSet() *set {
 	s := &set{}
-	s.m = make(map[string]struct{})
+	s.mp = make(map[string]struct{})
 	return s
 }
 
@@ -30,7 +31,7 @@ func (s *set) Remove(item string) {
 }
 
 //expands the set into its union with another set
-func (s1 *set) UnionTo(s2 *set) {
+func (s1 *set) UnionWith(s2 *set) {
 	for key, _ := range(s2.mp) {
 		s1.mp[key] = exists
 	}
@@ -76,4 +77,54 @@ func IntersectionComplement(s1 *set, s2 *set) *set {
 		}
 	}
 	return s3
+}
+
+type safeSet struct {
+	st *set
+	lock sync.Mutex
+}
+
+func NewSafeSet() *safeSet {
+	st := NewSet()
+	sf := &safeSet{st:st}
+	return sf
+}
+
+func (s *safeSet) Add(item string) {
+	s.lock.Lock()
+	s.st.Add(item)
+	s.lock.Unlock()
+}
+
+func (s *safeSet) Remove(item string) {
+	s.lock.Lock()
+	s.st.Remove(item)
+	s.lock.Unlock()
+}
+
+func (s1 *safeSet) UnionWith(s2 *safeSet) {
+	s1.lock.Lock()
+	s2.lock.Lock()
+	s1.st.UnionWith(s2.st)
+	s1.lock.Unlock()
+	s2.lock.Unlock()
+}
+
+func (s1 *safeSet) IntersectWith(s2 *safeSet) {
+	s1.lock.Lock()
+	s2.lock.Lock()
+	s1.st.IntersectWith(s2.st)
+	s1.lock.Unlock()
+	s2.lock.Unlock()
+}
+
+func SafeUnion(s1 *safeSet, s2 *safeSet) {
+	s3 := NewSafeSet()
+	s1.lock.Lock()
+	s2.lock.Lock()
+	s3.lock.Lock()
+	s3.st = Union(s1.st, s2.st)
+	s1.lock.Unlock()
+	s2.lock.Unlock()
+	s3.lock.Unlock()
 }
