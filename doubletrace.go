@@ -24,6 +24,7 @@ const DEFAULT_PACKET_SIZE = 52
 const FLOOR = 6
 const CEILING = 12
 
+/*turns an IP address into a string*/
 func ipToString(sourceAddr [4]byte) string {
 	source := strings.Builder{}
 	for _, byt := range(sourceAddr[:len(sourceAddr)-1]) {
