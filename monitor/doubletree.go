@@ -1,6 +1,7 @@
 package main
 import (
 	"github.com/aeden/traceroute"
+	"github.com/arieltraver/ari_traceroute/set"
 	"math/rand"
 	"time"
 	"syscall"
@@ -11,6 +12,9 @@ import (
 )
 
 var RANDOMIZED bool = true
+var PORT = 50000 //replace later with something to find open ports
+var TIMEOUT int64 = 1
+var PACKETSIZE int = 10
 
 func setMaxProbe(max int) int {
 	if RANDOMIZED {
@@ -22,7 +26,8 @@ func setMaxProbe(max int) int {
 	return max
 }
 
-func setUpSockets(port int) (int, int, error) {
+func setUpSockets() (int, int, error) {
+	//select non loopback address
 	socketAdd, err := socketAddr()
 	if err != nil {
 		return -1, -1, err
@@ -38,27 +43,36 @@ func setUpSockets(port int) (int, int, error) {
 	if err != nil {
 		return -1, -1, err
 	}
-
-	syscall.Bind(recvSocket, &syscall.SockaddrInet4{Port: port, Addr: socketAdd})
+	//bind the socket to listen for ICMP
+	syscall.Bind(recvSocket, &syscall.SockaddrInet4{Port: PORT, Addr: socketAdd})
 
 	return recvSocket, sendSocket, nil
 }
 
-/*
-func sendProbes(source, safe GSS, ips...) {
-	init safe LSS
-	init safe newNodes
-	init ports
-	init waitgroup
-	port = smallest port
-	for ip in ips:
-		preparesockets
-		waitgroup.add(1)
-		go probe(source, sockets,...)
-	waitgroup.wait
-	return safe LSS, safe newNodes
+
+func sendProbes(GSS *set.SafeSet, LSS *set.SafeSet, ips []string) {
+	NewNodes := set.NewSafeSet()
+	source, err := socketAddr()
+	if err != nil {
+		log.Fatal(err)
+	}
+	var wg sync.WaitGroup
+	sendSock, recSock, err := setUpSockets() //set up sockets for sending and listening
+	//do we need a new port/socket for each probe? probably since we don't want to mix things
+	if err != nil 
+		log.Fatal(err)
+	}
+	wg.Add(len(ips)) //one thread per IP
+	for _, ip := range(ips){
+		go probeAddr(&wg, &NewNodes, GSS, LSS, sendSock, recSock, ip, source)
+	}
 }
-*/
+
+func probeAddr(wg *sync.WaitGroup, NewNodes *set.SafeSet, GSS *set.SafeSet, LSS *set.SafeSet, sendSock int, recSock int, ip string, source [4]byte) {
+	defer wg.Done()
+	probeForward(source, sendSock, recSock, ip, LSS, GSS)
+	probeBack(source, sendSock, recSock, ip, LSS, GSS)
+}
 
 /*
 func probe(source...)
@@ -86,14 +100,14 @@ func probe(source...)
 */
 
 //returns -1 if it encounters an error, 0 if the node is new, 1 if it hits a global stop, 2 if it hits dest
-func probeForward(source [4]byte, sendSock int, recSock int, dest string, ttl int, timeout int64, port int, packetSize int, GSS map[string]bool, LSS map[string]bool) (int, *traceroute.TracerouteHop) {
+func probeForward(source [4] byte, sendSock int, recSock int, dest string, port int, GSS *set.SafeSet, LSS *set.SafeSet) (int, *traceroute.TracerouteHop) {
 	destAdd, err := destAddr(dest)
 	if err != nil {
 		log.Println(err)
 		return -1, nil
 	}
 	//convert timeout
-	tv := syscall.NsecToTimeval(1000 * 1000 * timeout)
+	tv := syscall.NsecToTimeval(1000 * 1000 * TIMEOUT)
 	//set up time interval to wait for response
 	syscall.SetsockoptTimeval(recSock, syscall.SOL_SOCKET, syscall.SO_RCVTIMEO, &tv)
 
@@ -102,7 +116,7 @@ func probeForward(source [4]byte, sendSock int, recSock int, dest string, ttl in
 	syscall.Sendto(sendSock, []byte{0x0}, 0, &syscall.SockaddrInet4{Port: port, Addr: destAdd})
 
 	//receive a response
-	var p = make([]byte, packetSize)
+	var p = make([]byte, PACKETSIZE)
 	n, from, err := syscall.Recvfrom(recSock, p, 0)
 	elapsed := time.Since(start)
 	if err != nil {
@@ -121,8 +135,8 @@ func probeForward(source [4]byte, sendSock int, recSock int, dest string, ttl in
 			return 2, &hop //reached destination
 		}
 		hopDest := string(destAdd[:]) + string(addr[:]) //for hashing purposes
-		if !GSS[hopDest] {
-			GSS[hopDest] = true
+		if !GSS.Contains(hopDest) {
+			GSS.Add(hopDest)
 			return 0, &hop //new node and not yet at destination
 		} else {
 			return 1, &hop //node already in GSS
@@ -186,12 +200,13 @@ func destAddr(dest string) (destAddr [4]byte, err error) {
 	copy(destAddr[:], ipAddr.IP.To4())
 	return
 }
+
+//from original traceroute. selects a non-loopback prefix to be used as source IP
 func socketAddr() (addr [4]byte, err error) {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
 		return
 	}
-
 	for _, a := range addrs {
 		if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
 			if len(ipnet.IP.To4()) == net.IPv4len {
