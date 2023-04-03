@@ -50,21 +50,16 @@ func setUpSockets() (int, int, error) {
 }
 
 
-func sendProbes(GSS *set.SafeSet, LSS *set.SafeSet, ips []string) {
+func sendProbes(GSS *set.SafeSet, ips []string) {
 	NewNodes := set.NewSafeSet()
-	source, err := socketAddr()
+	LSS := &set.NewSafeSet()
 	if err != nil {
 		log.Fatal(err)
 	}
 	var wg sync.WaitGroup
-	sendSock, recSock, err := setUpSockets() //set up sockets for sending and listening
-	//do we need a new port/socket for each probe? probably since we don't want to mix things
-	if err != nil 
-		log.Fatal(err)
-	}
 	wg.Add(len(ips)) //one thread per IP
 	for _, ip := range(ips){
-		go probeAddr(&wg, &NewNodes, GSS, LSS, sendSock, recSock, ip, source)
+		go probeAddr(&wg, &NewNodes, GSS, LSS, ip)
 	}
 }
 

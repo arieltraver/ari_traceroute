@@ -8,6 +8,7 @@ import (
 	"time"
 	"math/rand"
 	"github.com/arieltraver/ari_traceroute/set"
+	"sync"
 )
 
 const DEFAULT_PORT = 33434
@@ -180,6 +181,27 @@ func closeNotify(channels []chan TracerouteHop) {
 	}
 }
 
+func sendProbes(GSS *set.SafeSet, ips []string) {
+	NewNodes := &set.NewSafeSet()
+	LSS := &set.NewSafeSet()
+	if err != nil {
+		log.Fatal(err)
+	}
+	var wg sync.WaitGroup
+	wg.Add(len(ips)) //one thread per IP
+	for _, ip := range(ips){
+		go probeAddr(&wg, NewNodes, GSS, LSS, ip)
+	}
+}
+
+func probeAddr(wg *sync.WaitGroup, NewNodes *set.SafeSet, GSS *set.SafeSet, LSS *set.SafeSet, ip string) {
+	
+}
+
+
+
+
+
 // Traceroute uses the given dest (hostname) and options to execute a traceroute
 // from your machine to the remote host.
 //
@@ -336,6 +358,7 @@ func ProbeBackwards(lastNode int, LSS *set.SafeSet, GSS *set.SafeSet, dest strin
 		syscall.Bind(recvSocket, &syscall.SockaddrInet4{Port: options.Port(), Addr: socketAddr})
 
 		/*
+		planned modification: keep checksum constant using payload?...
 		 :In UDP probes, it is the checksum field. This requires manipulating the payload
 		to yield the desired checksum, as packets with an incorrect checksum are liable
 		to be discarded."
