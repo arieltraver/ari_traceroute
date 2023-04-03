@@ -3,13 +3,16 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
+	"math/rand"
 	"net"
+	"strconv"
+	"sync"
 	"syscall"
 	"time"
-	"math/rand"
+	"strings"
+
 	"github.com/arieltraver/ari_traceroute/set"
-	"sync"
-	"log"
 )
 
 const DEFAULT_PORT = 33434
@@ -20,6 +23,16 @@ const DEFAULT_RETRIES = 3
 const DEFAULT_PACKET_SIZE = 52
 const FLOOR = 6
 const CEILING = 12
+
+func ipToString(sourceAddr [4]byte) string {
+	source := strings.Builder{}
+	for _, byt := range(sourceAddr[:len(sourceAddr)-1]) {
+		source.WriteByte(byt)
+		source.WriteRune('.')
+	}
+	source.WriteByte(sourceAddr[3])
+	return source.String()
+}
 
 //doubletree addon from paper, helps prevent overburdening destinations
 func (options *TracerouteOptions) SetMaxHopsRandom(floor int, ceiling int) {
@@ -203,9 +216,10 @@ func probeAddr(wg *sync.WaitGroup, NewNodes *set.SafeSet, GSS *set.SafeSet, LSS 
 	if err != nil {
 		log.Fatal(err)
 	}
-	lastHop := forwardHops.Hops[len(forwardHops.Hops)-1]
 	backward := make(chan TracerouteHop, options.maxHops)
-	backwardHops, err := probeBackwards(&forwardHops, GSS, LSS, ip, options, backward)
+	sourceAddr, err := socketAddr()
+	source := &strings.Builder{}
+	backwardHops, err := probeBackwards(string(source), &forwardHops, GSS, LSS, ip, options, backward)
 }
 
 
