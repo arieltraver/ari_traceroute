@@ -271,7 +271,6 @@ func ProbeForward(GSS *set.SafeSet, dest string, options *TracerouteOptions, c .
 				closeNotify(c)
 				return result, nil
 			}
-			GSS.Add(hopDestString) //modification: add to GSS while probing
 		} else {
 			retry += 1
 			if retry > options.Retries() {
@@ -370,7 +369,7 @@ func ProbeBackwards(lastNode int, LSS *set.SafeSet, GSS *set.SafeSet, dest strin
 			ttl -= 1
 			retry = 0
 
-			if ttl > options.MaxHops() || currAddr == destAddr {
+			if ttl <= 0 {
 				closeNotify(c)
 				return result, nil
 			}
