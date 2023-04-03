@@ -187,7 +187,7 @@ func closeNotify(channels []chan TracerouteHop) {
 //
 // Returns a TracerouteResult which contains an array of hops. Each hop includes
 // the elapsed time and its IP address.
-func Traceroute(GSS *set.SafeSet, dest string, options *TracerouteOptions, c ...chan TracerouteHop) (result TracerouteResult, err error) {
+func ProbeForward(GSS *set.SafeSet, dest string, options *TracerouteOptions, c ...chan TracerouteHop) (result TracerouteResult, err error) {
 	result.Hops = []TracerouteHop{}
 	destAddr, err := destAddr(dest)
 	result.DestinationAddress = destAddr
@@ -261,9 +261,113 @@ func Traceroute(GSS *set.SafeSet, dest string, options *TracerouteOptions, c ...
 			notify(hop, c)
 
 			result.Hops = append(result.Hops, hop)
-			GSS.Add(hop.AddressString() + dest) //modification: add to GSS while probing
+			hopDestString := hop.AddressString() + dest
 
 			ttl += 1
+			retry = 0
+
+			// modification added here to stop if it hits node in GSS or LSS
+			if ttl > options.MaxHops() || currAddr == destAddr || GSS.Contains(hopDestString){
+				closeNotify(c)
+				return result, nil
+			}
+			GSS.Add(hopDestString) //modification: add to GSS while probing
+		} else {
+			retry += 1
+			if retry > options.Retries() {
+				notify(TracerouteHop{Success: false, TTL: ttl}, c)
+				ttl += 1
+				retry = 0
+			}
+
+			if ttl > options.MaxHops() {
+				closeNotify(c)
+				return result, nil
+			}
+		}
+
+	}
+}
+
+//just like probeforwards but adds to LSS and GSS
+func ProbeBackwards(lastNode int, LSS *set.SafeSet, GSS *set.SafeSet, dest string, options *TracerouteOptions, c ...chan TracerouteHop) (result TracerouteResult, err error) {
+	result.Hops = []TracerouteHop{}
+	destAddr, err := destAddr(dest)
+	result.DestinationAddress = destAddr
+	socketAddr, err := socketAddr()
+	if err != nil {
+		return
+	}
+
+	timeoutMs := (int64)(options.TimeoutMs())
+	tv := syscall.NsecToTimeval(1000 * 1000 * timeoutMs)
+
+	ttl := lastNode
+	retry := 0
+	for {
+		//log.Println("TTL: ", ttl)
+		start := time.Now()
+
+		// Set up the socket to receive inbound packets
+		recvSocket, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_RAW, syscall.IPPROTO_ICMP)
+		if err != nil {
+			return result, err
+		}
+
+		// Set up the socket to send packets out.
+		sendSocket, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_DGRAM, syscall.IPPROTO_UDP)
+		if err != nil {
+			return result, err
+		}
+
+		/*
+		THIS IS WHERE PARIS TRACEROUTE MODIFICATIONS CAN BE MADE
+		using: syscall.Setsockopt
+		*/
+
+		// This sets the current hop TTL
+		syscall.SetsockoptInt(sendSocket, 0x0, syscall.IP_TTL, ttl)
+		// This sets the timeout to wait for a response from the remote host
+		syscall.SetsockoptTimeval(recvSocket, syscall.SOL_SOCKET, syscall.SO_RCVTIMEO, &tv)
+
+		defer syscall.Close(recvSocket)
+		defer syscall.Close(sendSocket)
+
+		// Bind to the local socket to listen for ICMP packets
+		syscall.Bind(recvSocket, &syscall.SockaddrInet4{Port: options.Port(), Addr: socketAddr})
+
+		/*
+		 :In UDP probes, it is the checksum field. This requires manipulating the payload
+		to yield the desired checksum, as packets with an incorrect checksum are liable
+		to be discarded."
+		GOAL: replace "[]byte{0x0}" with a modified payload that keeps the checksum constant
+			  print out the checksum each time
+		*/
+		// Send a single null byte UDP packet
+		syscall.Sendto(sendSocket, []byte{0x0}, 0, &syscall.SockaddrInet4{Port: options.Port(), Addr: destAddr})
+
+		var p = make([]byte, options.PacketSize())
+		n, from, err := syscall.Recvfrom(recvSocket, p, 0)
+		elapsed := time.Since(start)
+		if err == nil {
+			currAddr := from.(*syscall.SockaddrInet4).Addr
+
+			hop := TracerouteHop{Success: true, Address: currAddr, N: n, ElapsedTime: elapsed, TTL: ttl}
+
+			// TODO: this reverse lookup appears to have some standard timeout that is relatively
+			// high. Consider switching to something where there is greater control.
+			currHost, err := net.LookupAddr(hop.AddressString())
+			if err == nil {
+				hop.Host = currHost[0]
+			}
+
+			notify(hop, c)
+
+			result.Hops = append(result.Hops, hop)
+			GSS.Add(dest + hop.AddressString()) //modification: add to GSS while probing back
+			LSS.Add(dest + hop.AddressString())
+
+			ttl -= 1
 			retry = 0
 
 			if ttl > options.MaxHops() || currAddr == destAddr {
