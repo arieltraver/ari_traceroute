@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"github.com/arieltraver/ari_traceroute/set"
 	"sync"
+	"log"
 )
 
 const DEFAULT_PORT = 33434
@@ -17,15 +18,21 @@ const DEFAULT_FIRST_HOP = 1
 const DEFAULT_TIMEOUT_MS = 500
 const DEFAULT_RETRIES = 3
 const DEFAULT_PACKET_SIZE = 52
-const RANDOMIZED = true
+const FLOOR = 6
+const CEILING = 12
 
 //doubletree addon from paper, helps prevent overburdening destinations
-func setMaxHops(floor int, ceiling int) int {
+func (options *TracerouteOptions) SetMaxHopsRandom(floor int, ceiling int) {
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
 	i := r1.Intn(ceiling - floor)
 	i += floor
-	return i
+	options.maxHops = i
+}
+
+
+func (options *TracerouteOptions) SetMaxHops(maxHops int) {
+	options.maxHops = maxHops
 }
 
 
@@ -88,13 +95,9 @@ func (options *TracerouteOptions) SetPort(port int) {
 
 func (options *TracerouteOptions) MaxHops() int {
 	if options.maxHops == 0 {
-		options.maxHops = setMaxHops(5, 10)
+		options.SetMaxHopsRandom(5, 10)
 	}
 	return options.maxHops
-}
-
-func (options *TracerouteOptions) SetMaxHops(maxHops int) {
-	options.maxHops = maxHops
 }
 
 func (options *TracerouteOptions) FirstHop() int {
@@ -184,9 +187,6 @@ func closeNotify(channels []chan TracerouteHop) {
 func sendProbes(GSS *set.SafeSet, ips []string) {
 	NewNodes := &set.NewSafeSet()
 	LSS := &set.NewSafeSet()
-	if err != nil {
-		log.Fatal(err)
-	}
 	var wg sync.WaitGroup
 	wg.Add(len(ips)) //one thread per IP
 	for _, ip := range(ips){
@@ -195,7 +195,17 @@ func sendProbes(GSS *set.SafeSet, ips []string) {
 }
 
 func probeAddr(wg *sync.WaitGroup, NewNodes *set.SafeSet, GSS *set.SafeSet, LSS *set.SafeSet, ip string) {
-	
+	defer wg.Done()
+	options := &TracerouteOptions{}
+	options.SetMaxHopsRandom(FLOOR, CEILING)
+	forward := make(chan TracerouteHop, options.maxHops)
+	forwardHops, err := probeForward(GSS, ip, options, forward)
+	if err != nil {
+		log.Fatal(err)
+	}
+	lastHop := forwardHops.Hops[len(forwardHops.Hops)-1]
+	backward := make(chan TracerouteHop, options.maxHops)
+	backwardHops, err := probeBackwards(&forwardHops, GSS, LSS, ip, options, backward)
 }
 
 
@@ -209,8 +219,8 @@ func probeAddr(wg *sync.WaitGroup, NewNodes *set.SafeSet, GSS *set.SafeSet, LSS 
 //
 // Returns a TracerouteResult which contains an array of hops. Each hop includes
 // the elapsed time and its IP address.
-func ProbeForward(GSS *set.SafeSet, dest string, options *TracerouteOptions, c ...chan TracerouteHop) (result TracerouteResult, err error) {
-	result.Hops = []TracerouteHop{}
+func probeForward(GSS *set.SafeSet, dest string, options *TracerouteOptions, c ...chan TracerouteHop) (result TracerouteResult, err error) {
+	result.Hops = make([]TracerouteHop, 0, options.maxHops) //prevent resizing
 	destAddr, err := destAddr(dest)
 	result.DestinationAddress = destAddr
 	socketAddr, err := socketAddr()
@@ -310,22 +320,22 @@ func ProbeForward(GSS *set.SafeSet, dest string, options *TracerouteOptions, c .
 	}
 }
 
-//just like probeforwards but adds to LSS and GSS
-func ProbeBackwards(lastNode int, LSS *set.SafeSet, GSS *set.SafeSet, dest string, options *TracerouteOptions, c ...chan TracerouteHop) (result TracerouteResult, err error) {
-	result.Hops = []TracerouteHop{}
-	destAddr, err := destAddr(dest)
-	result.DestinationAddress = destAddr
-	socketAddr, err := socketAddr()
-	if err != nil {
-		return
-	}
+/*
+unlike forwards route discovery, backwards goes from probe to each hop.
+this records routes between each hop and the probe, with the probe as destination.
+each(hop, probe) address pair is added to both GSS and LSS.
+*/
+func probeBackwards(source string, forwardHops []TracerouteHop, LSS *set.SafeSet, GSS *set.SafeSet, options *TracerouteOptions, c ...chan TracerouteHop) (result TracerouteResult, err error) {
+	result.Hops = make([]TracerouteHop, 0, len(forwardHops)) //prevent resizing
 
 	timeoutMs := (int64)(options.TimeoutMs())
 	tv := syscall.NsecToTimeval(1000 * 1000 * timeoutMs)
 
-	ttl := lastNode
 	retry := 0
+	currentHop := len(forwardHops) - 1
 	for {
+		dest := forwardHops[currentHop].Host //string of address
+		hopAddr := forwardHops[currentHop].Address //probe the address
 		//log.Println("TTL: ", ttl)
 		start := time.Now()
 
@@ -346,8 +356,8 @@ func ProbeBackwards(lastNode int, LSS *set.SafeSet, GSS *set.SafeSet, dest strin
 		using: syscall.Setsockopt
 		*/
 
-		// This sets the current hop TTL
-		syscall.SetsockoptInt(sendSocket, 0x0, syscall.IP_TTL, ttl)
+		// set current hop ttl to die when it reaches destination
+		syscall.SetsockoptInt(sendSocket, 0x0, syscall.IP_TTL, currentHop)
 		// This sets the timeout to wait for a response from the remote host
 		syscall.SetsockoptTimeval(recvSocket, syscall.SOL_SOCKET, syscall.SO_RCVTIMEO, &tv)
 
@@ -355,7 +365,7 @@ func ProbeBackwards(lastNode int, LSS *set.SafeSet, GSS *set.SafeSet, dest strin
 		defer syscall.Close(sendSocket)
 
 		// Bind to the local socket to listen for ICMP packets
-		syscall.Bind(recvSocket, &syscall.SockaddrInet4{Port: options.Port(), Addr: socketAddr})
+		syscall.Bind(recvSocket, &syscall.SockaddrInet4{Port: options.Port(), Addr: hopAddr})
 
 		/*
 		planned modification: keep checksum constant using payload?...
@@ -366,7 +376,7 @@ func ProbeBackwards(lastNode int, LSS *set.SafeSet, GSS *set.SafeSet, dest strin
 			  print out the checksum each time
 		*/
 		// Send a single null byte UDP packet
-		syscall.Sendto(sendSocket, []byte{0x0}, 0, &syscall.SockaddrInet4{Port: options.Port(), Addr: destAddr})
+		syscall.Sendto(sendSocket, []byte{0x0}, 0, &syscall.SockaddrInet4{Port: options.Port(), Addr: hopAddr})
 
 		var p = make([]byte, options.PacketSize())
 		n, from, err := syscall.Recvfrom(recvSocket, p, 0)
@@ -374,7 +384,7 @@ func ProbeBackwards(lastNode int, LSS *set.SafeSet, GSS *set.SafeSet, dest strin
 		if err == nil {
 			currAddr := from.(*syscall.SockaddrInet4).Addr
 
-			hop := TracerouteHop{Success: true, Address: currAddr, N: n, ElapsedTime: elapsed, TTL: ttl}
+			hop := TracerouteHop{Success: true, Address: currAddr, N: n, ElapsedTime: elapsed, TTL: currentHop}
 
 			// TODO: this reverse lookup appears to have some standard timeout that is relatively
 			// high. Consider switching to something where there is greater control.
@@ -386,13 +396,13 @@ func ProbeBackwards(lastNode int, LSS *set.SafeSet, GSS *set.SafeSet, dest strin
 			notify(hop, c)
 
 			result.Hops = append(result.Hops, hop)
-			GSS.Add(dest + hop.AddressString()) //modification: add to GSS while probing back
-			LSS.Add(dest + hop.AddressString())
+			GSS.Add(dest + source) //modification: add to GSS while probing back
+			LSS.Add(dest + source) //add to LSS while probing back
 
-			ttl -= 1
+			currentHop-=1
 			retry = 0
 
-			if ttl <= 0 {
+			if currentHop <= 0 {
 				closeNotify(c)
 				return result, nil
 			}
@@ -400,11 +410,11 @@ func ProbeBackwards(lastNode int, LSS *set.SafeSet, GSS *set.SafeSet, dest strin
 			retry += 1
 			if retry > options.Retries() {
 				notify(TracerouteHop{Success: false, TTL: ttl}, c)
-				ttl += 1
+				currentHop -= 1
 				retry = 0
 			}
 
-			if ttl > options.MaxHops() {
+			if currentHop > options.MaxHops() {
 				closeNotify(c)
 				return result, nil
 			}
