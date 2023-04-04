@@ -202,15 +202,16 @@ func probeAddr(wg *sync.WaitGroup, NewNodes *set.SafeSet, GSS *set.SafeSet, LSS 
 	defer wg.Done()
 	options := &TracerouteOptions{}
 	options.SetMaxHopsRandom(FLOOR, CEILING)
+	fmt.Println("max hops is", options.maxHops)
+	sourceAddr, err := socketAddr()
+	source := addressString(sourceAddr)
 	forward := make(chan TracerouteHop, options.maxHops)
 	forwardHops, err := probeForward(GSS, ip, options, forward)
 	if err != nil {
 		log.Fatal(err)
 	}
 	backward := make(chan TracerouteHop, options.maxHops)
-	sourceAddr, err := socketAddr()
-	source := &strings.Builder{}
-	backwardHops, err := probeBackwards(, &forwardHops, GSS, LSS, ip, options, backward)
+	backwardHops, err := probeBackwards(source, forwardHops.Hops, GSS, LSS, options, backward)
 }
 
 
