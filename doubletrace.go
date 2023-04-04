@@ -9,7 +9,6 @@ import (
 	"sync"
 	"syscall"
 	"time"
-	"strings"
 )
 
 const DEFAULT_PORT = 33434
@@ -188,9 +187,9 @@ func closeNotify(channels []chan TracerouteHop) {
 	}
 }
 
-func sendProbes(GSS *set.SafeSet, ips []string) {
-	NewNodes := &set.NewSafeSet()
-	LSS := &set.NewSafeSet()
+func sendProbes(GSS *safeSet, ips []string) {
+	NewNodes := NewSafeSet()
+	LSS := NewSafeSet()
 	var wg sync.WaitGroup
 	wg.Add(len(ips)) //one thread per IP
 	for _, ip := range(ips){
@@ -198,20 +197,30 @@ func sendProbes(GSS *set.SafeSet, ips []string) {
 	}
 }
 
-func probeAddr(wg *sync.WaitGroup, NewNodes *set.SafeSet, GSS *set.SafeSet, LSS *set.SafeSet, ip string) {
+func probeAddr(wg *sync.WaitGroup, NewNodes *safeSet, GSS *safeSet, LSS *safeSet, ip string) {
 	defer wg.Done()
 	options := &TracerouteOptions{}
 	options.SetMaxHopsRandom(FLOOR, CEILING)
 	fmt.Println("max hops is", options.maxHops)
 	sourceAddr, err := socketAddr()
-	source := addressString(sourceAddr)
 	forward := make(chan TracerouteHop, options.maxHops)
-	forwardHops, err := probeForward(GSS, ip, options, forward)
+	forwardHops, err := probeForward(sourceAddr, GSS, ip, options, forward)
 	if err != nil {
 		log.Fatal(err)
 	}
 	backward := make(chan TracerouteHop, options.maxHops)
-	backwardHops, err := probeBackwards(source, forwardHops.Hops, GSS, LSS, options, backward)
+	//
+	_, err = probeBackwards(sourceAddr,forwardHops.Hops, GSS, LSS, options, backward)
+	if err != nil {
+		log.Fatal(err) //TODO: do not crash the whole program if one trace fails.
+	}
+
+	//TODO: check for null nodes.
+	//add all new nodes to the set
+	for _, hop := range(forwardHops.Hops) {
+		NewNodes.Add(hop.AddressString())
+	}
+	//TODO: add new (sorted) ip,ip edges to the edge set.
 }
 
 
@@ -225,11 +234,10 @@ func probeAddr(wg *sync.WaitGroup, NewNodes *set.SafeSet, GSS *set.SafeSet, LSS 
 //
 // Returns a TracerouteResult which contains an array of hops. Each hop includes
 // the elapsed time and its IP address.
-func probeForward(GSS *set.SafeSet, dest string, options *TracerouteOptions, c ...chan TracerouteHop) (result TracerouteResult, err error) {
+func probeForward(socketAddr [4]byte, GSS *safeSet, dest string, options *TracerouteOptions, c ...chan TracerouteHop) (result TracerouteResult, err error) {
 	result.Hops = make([]TracerouteHop, 0, options.maxHops) //prevent resizing
 	destAddr, err := destAddr(dest)
 	result.DestinationAddress = destAddr
-	socketAddr, err := socketAddr()
 	if err != nil {
 		return
 	}
@@ -297,7 +305,7 @@ func probeForward(GSS *set.SafeSet, dest string, options *TracerouteOptions, c .
 			}
 
 			notify(hop, c)
-
+			
 			result.Hops = append(result.Hops, hop)
 			hopDestString := hop.AddressString() + dest
 
@@ -331,7 +339,8 @@ unlike forwards route discovery, backwards goes from probe to each hop.
 this records routes between each hop and the probe, with the probe as destination.
 each(hop, probe) address pair is added to both GSS and LSS.
 */
-func probeBackwards(source string, forwardHops []TracerouteHop, LSS *set.SafeSet, GSS *set.SafeSet, options *TracerouteOptions, c ...chan TracerouteHop) (result TracerouteResult, err error) {
+func probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop, LSS *safeSet, GSS *safeSet, options *TracerouteOptions, c ...chan TracerouteHop) (result TracerouteResult, err error) {
+	source := addressString(socketAddr)
 	result.Hops = make([]TracerouteHop, 0, len(forwardHops)) //prevent resizing
 
 	timeoutMs := (int64)(options.TimeoutMs())

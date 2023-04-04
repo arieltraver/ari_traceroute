@@ -53,9 +53,6 @@ func setUpSockets() (int, int, error) {
 func sendProbes(GSS *set.SafeSet, ips []string) {
 	NewNodes := set.NewSafeSet()
 	LSS := &set.NewSafeSet()
-	if err != nil {
-		log.Fatal(err)
-	}
 	var wg sync.WaitGroup
 	wg.Add(len(ips)) //one thread per IP
 	for _, ip := range(ips){
