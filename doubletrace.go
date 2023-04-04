@@ -6,13 +6,10 @@ import (
 	"log"
 	"math/rand"
 	"net"
-	"strconv"
 	"sync"
 	"syscall"
 	"time"
 	"strings"
-
-	"github.com/arieltraver/ari_traceroute/set"
 )
 
 const DEFAULT_PORT = 33434
@@ -24,17 +21,6 @@ const DEFAULT_PACKET_SIZE = 52
 const FLOOR = 6
 const CEILING = 12
 
-/*turns an IP address into a string*/
-func ipToString(sourceAddr [4]byte) string {
-	source := strings.Builder{}
-	for _, byt := range(sourceAddr[:len(sourceAddr)-1]) {
-		source.WriteByte(byt)
-		source.WriteRune('.')
-	}
-	source.WriteByte(sourceAddr[3])
-	return source.String()
-}
-
 //doubletree addon from paper, helps prevent overburdening destinations
 func (options *TracerouteOptions) SetMaxHopsRandom(floor int, ceiling int) {
 	s1 := rand.NewSource(time.Now().UnixNano())
@@ -44,7 +30,7 @@ func (options *TracerouteOptions) SetMaxHopsRandom(floor int, ceiling int) {
 	options.maxHops = i
 }
 
-
+//setter
 func (options *TracerouteOptions) SetMaxHops(maxHops int) {
 	options.maxHops = maxHops
 }
@@ -168,6 +154,10 @@ type TracerouteHop struct {
 	TTL         int
 }
 
+func addressString(add [4]byte) string {
+	return fmt.Sprintf("%v.%v.%v.%v", add[0], add[1], add[2], add[3])
+}
+
 func (hop *TracerouteHop) AddressString() string {
 	return fmt.Sprintf("%v.%v.%v.%v", hop.Address[0], hop.Address[1], hop.Address[2], hop.Address[3])
 }
@@ -220,7 +210,7 @@ func probeAddr(wg *sync.WaitGroup, NewNodes *set.SafeSet, GSS *set.SafeSet, LSS 
 	backward := make(chan TracerouteHop, options.maxHops)
 	sourceAddr, err := socketAddr()
 	source := &strings.Builder{}
-	backwardHops, err := probeBackwards(string(source), &forwardHops, GSS, LSS, ip, options, backward)
+	backwardHops, err := probeBackwards(, &forwardHops, GSS, LSS, ip, options, backward)
 }
 
 
