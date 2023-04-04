@@ -188,8 +188,8 @@ func closeNotify(channels []chan TracerouteHop) {
 }
 
 func sendProbes(GSS *safeSet, ips []string) {
-	NewNodes := NewSafeSet()
-	LSS := NewSafeSet()
+	NewNodes := set.NewSafeSet()
+	LSS := set.NewSafeSet()
 	var wg sync.WaitGroup
 	wg.Add(len(ips)) //one thread per IP
 	for _, ip := range(ips){
@@ -203,6 +203,9 @@ func probeAddr(wg *sync.WaitGroup, NewNodes *safeSet, GSS *safeSet, LSS *safeSet
 	options.SetMaxHopsRandom(FLOOR, CEILING)
 	fmt.Println("max hops is", options.maxHops)
 	sourceAddr, err := socketAddr()
+	if err != nil {
+		log.Fatal(err) //Todo: replace with non fatal err & return
+	}
 	forward := make(chan TracerouteHop, options.maxHops)
 	forwardHops, err := probeForward(sourceAddr, GSS, ip, options, forward)
 	if err != nil {
@@ -435,5 +438,25 @@ func probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop, LSS *safeSe
 			}
 		}
 
+	}
+}
+
+func testForward() {
+	testGSS := set.NewSafeSet()
+	testLSS := set.NewSafeSet()
+	options := &TracerouteOptions{}
+	options.SetMaxHopsRandom(FLOOR, CEILING)
+	fmt.Println("max hops is", options.maxHops)
+	sourceAddr, err := socketAddr()
+	if err != nil {
+		log.Fatal(err) //Todo: replace with non fatal err & return
+	}
+	hopChan := make(chan TracerouteHop, options.maxHops)
+	result, err := probeForward(sourceAddr, testGSS, testLSS, "bugsincyberspace.com", options, hopChan)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, hop := range(result.Hops) {
+		fmt.Println(hop.AddressString())
 	}
 }

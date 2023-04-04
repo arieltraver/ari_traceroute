@@ -118,6 +118,4 @@ func main() {
 	if <-complete {
 		fmt.Println("done")
 	}
-
-
 }

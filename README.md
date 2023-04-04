@@ -1,32 +1,18 @@
-# Traceroute in Go
+# Doubletree Traceroute in Go
 
-A traceroute library written in Go.
+Doubletree for distributed network monitors
+Probe uses a modified version of the original Go traceroute by Aeden on Github.
+Original traceroute [github.com/aeden/traceroute]
+Package docs for Aeden traceroute [https://pkg.go.dev/github.com/aeden/traceroute]
 
-Must be run as sudo on OS X (and others)?
+## Works Cited
 
-## CLI App
+Doubletree
 
-```sh
-go build cmd/gotraceroute
-sudo ./gotraceroute example.com
-```
-
-## Library
-
-See the code in cmd/gotraceroute.go for an example of how to use the library from within your application.
-
-The traceroute.Traceroute() function accepts a domain name and an options struct and returns a TracerouteResult struct that holds an array of TracerouteHop structs.
-
-## Resources
-
-Useful resources:
-
-* http://en.wikipedia.org/wiki/Traceroute
-* http://tools.ietf.org/html/rfc792
-* http://en.wikipedia.org/wiki/Internet_Control_Message_Protocol
+* Donnet, B., Raoult, P., Friedman, T., & Crovella, M. (2006). Deployment of an Algorithm for Large-Scale Topology Discovery. IEEE JOURNAL ON SELECTED AREAS IN COMMUNICATIONS, (6th IEEE International Conference on IP Operations and Management). https://doi.org/10.1007/11908852_17 
+* 
 
 ## Notes
 
-* https://code.google.com/p/go/source/browse/src/pkg/net/ipraw_test.go
-* http://godoc.org/code.google.com/p/go.net/ipv4
-* http://golang.org/pkg/syscall/
+* set.go based on this tutorial: https://www.davidkaya.com/sets-in-golang/
+* currently a work in progress
