@@ -37,6 +37,7 @@ func sayhi(c net.Conn) {
 }
 
 //connect to host
+/*
 func main() {
 	args := os.Args
 	if len(args) <= 1 {
@@ -49,3 +50,4 @@ func main() {
 
 	sayhi(c)
 }
+*/

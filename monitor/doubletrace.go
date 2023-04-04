@@ -188,8 +188,8 @@ func closeNotify(channels []chan TracerouteHop) {
 }
 
 func sendProbes(GSS *safeSet, ips []string) {
-	NewNodes := set.NewSafeSet()
-	LSS := set.NewSafeSet()
+	NewNodes := NewSafeSet()
+	LSS := NewSafeSet()
 	var wg sync.WaitGroup
 	wg.Add(len(ips)) //one thread per IP
 	for _, ip := range(ips){
@@ -354,8 +354,8 @@ func probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop, LSS *safeSe
 	for {
 		dest := forwardHops[currentHop].Host //string of address
 		hopAddr := forwardHops[currentHop].Address //probe the address
+		fmt.Println("current hop:", currentHop, "probing:", hopAddr)
 		//log.Println("TTL: ", ttl)
-		start := time.Now()
 
 		// Set up the socket to receive inbound packets
 		recvSocket, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_RAW, syscall.IPPROTO_ICMP)
@@ -375,7 +375,7 @@ func probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop, LSS *safeSe
 		*/
 
 		// set current hop ttl to die when it reaches destination
-		syscall.SetsockoptInt(sendSocket, 0x0, syscall.IP_TTL, currentHop)
+		syscall.SetsockoptInt(sendSocket, 0x0, syscall.IP_TTL, currentHop + 1)
 		// This sets the timeout to wait for a response from the remote host
 		syscall.SetsockoptTimeval(recvSocket, syscall.SOL_SOCKET, syscall.SO_RCVTIMEO, &tv)
 
@@ -394,6 +394,7 @@ func probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop, LSS *safeSe
 			  print out the checksum each time
 		*/
 		// Send a single null byte UDP packet
+		start := time.Now()
 		syscall.Sendto(sendSocket, []byte{0x0}, 0, &syscall.SockaddrInet4{Port: options.Port(), Addr: hopAddr})
 
 		var p = make([]byte, options.PacketSize())
@@ -402,12 +403,12 @@ func probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop, LSS *safeSe
 		if err == nil {
 			currAddr := from.(*syscall.SockaddrInet4).Addr
 
-			hop := TracerouteHop{Success: true, Address: currAddr, N: n, ElapsedTime: elapsed, TTL: currentHop}
+			hop := TracerouteHop{Success: true, Address: currAddr, N: n, ElapsedTime: elapsed, TTL: currentHop + 1}
 
 			// TODO: this reverse lookup appears to have some standard timeout that is relatively
 			// high. Consider switching to something where there is greater control.
-			currHost, err := net.LookupAddr(hop.AddressString())
-			if err == nil {
+			currHost, err2 := net.LookupAddr(hop.AddressString())
+			if err2 == nil {
 				hop.Host = currHost[0]
 			}
 
@@ -425,25 +426,21 @@ func probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop, LSS *safeSe
 				return result, nil
 			}
 		} else {
+			fmt.Println("retrying")
 			retry += 1
 			if retry > options.Retries() {
-				notify(TracerouteHop{Success: false, TTL: ttl}, c)
+				notify(TracerouteHop{Success: false, TTL: currentHop}, c)
 				currentHop -= 1
 				retry = 0
-			}
-
-			if currentHop > options.MaxHops() {
-				closeNotify(c)
-				return result, nil
 			}
 		}
 
 	}
 }
 
-func testForward() {
-	testGSS := set.NewSafeSet()
-	testLSS := set.NewSafeSet()
+func test() {
+	testGSS := NewSafeSet()
+	testLSS := NewSafeSet()
 	options := &TracerouteOptions{}
 	options.SetMaxHopsRandom(FLOOR, CEILING)
 	fmt.Println("max hops is", options.maxHops)
@@ -452,11 +449,25 @@ func testForward() {
 		log.Fatal(err) //Todo: replace with non fatal err & return
 	}
 	hopChan := make(chan TracerouteHop, options.maxHops)
-	result, err := probeForward(sourceAddr, testGSS, testLSS, "bugsincyberspace.com", options, hopChan)
+	forwardResult, err := probeForward(sourceAddr, testGSS, "bugsincyberspace.com", options, hopChan)
 	if err != nil {
 		log.Fatal(err)
 	}
-	for _, hop := range(result.Hops) {
+	for _, hop := range(forwardResult.Hops) {
 		fmt.Println(hop.AddressString())
 	}
+	fmt.Println("-----------------")
+	backward := make(chan TracerouteHop, options.maxHops)
+	backResult, err := probeBackwards(sourceAddr, forwardResult.Hops, testGSS, testLSS, options, backward)
+	if err != nil {
+		log.Fatal(err) //TODO: do not crash the whole program if one trace fails.
+	}
+	for _, hop := range(backResult.Hops) {
+		fmt.Println(hop.AddressString())
+	}
+
+}
+
+func main(){
+	test()
 }

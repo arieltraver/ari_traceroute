@@ -229,7 +229,3 @@ func testRoutine(s1 *safeSet, s2 *safeSet, s3 *safeSet, wg *sync.WaitGroup){
 		s3.Add("test")
 	}
 }
-
-func main() {
-	testSetsConcurrent()
-}
