@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const DEFAULT_PORT = 33434
+const DEFAULT_PORT int = 33434
 const DEFAULT_MAX_HOPS = 64
 const DEFAULT_FIRST_HOP = 1
 const DEFAULT_TIMEOUT_MS = 500
@@ -195,14 +195,14 @@ func sendProbes(GSS *safeSet, ips []string) {
 	for _, ip := range(ips){
 		go probeAddr(&wg, NewNodes, GSS, LSS, ip)
 	}
+	wg.Wait()
 }
 
 func probeAddr(wg *sync.WaitGroup, NewNodes *safeSet, GSS *safeSet, LSS *safeSet, ip string) {
 	defer wg.Done()
 	options := &TracerouteOptions{}
 	options.SetMaxHopsRandom(FLOOR, CEILING)
-	fmt.Println("max hops is", options.maxHops)
-	sourceAddr, err := socketAddr()
+	sourceAddr, err := socketAddr() //possible cause of glitch
 	if err != nil {
 		log.Fatal(err) //Todo: replace with non fatal err & return
 	}
@@ -238,6 +238,7 @@ func probeAddr(wg *sync.WaitGroup, NewNodes *safeSet, GSS *safeSet, LSS *safeSet
 // Returns a TracerouteResult which contains an array of hops. Each hop includes
 // the elapsed time and its IP address.
 func probeForward(socketAddr [4]byte, GSS *safeSet, dest string, options *TracerouteOptions, c ...chan TracerouteHop) (result TracerouteResult, err error) {
+	fmt.Println("probing forward")
 	result.Hops = make([]TracerouteHop, 0, options.maxHops) //prevent resizing
 	destAddr, err := destAddr(dest)
 	result.DestinationAddress = destAddr
@@ -310,7 +311,7 @@ func probeForward(socketAddr [4]byte, GSS *safeSet, dest string, options *Tracer
 			notify(hop, c)
 			
 			result.Hops = append(result.Hops, hop)
-			hopDestString := hop.AddressString() + dest
+			hopDestString := hop.AddressString() + "-" + addressString(socketAddr)
 
 			ttl += 1
 			retry = 0
@@ -320,6 +321,8 @@ func probeForward(socketAddr [4]byte, GSS *safeSet, dest string, options *Tracer
 				closeNotify(c)
 				return result, nil
 			}
+			fmt.Println("adding to GSS")
+			GSS.Add(hopDestString) //add to global stop set
 		} else {
 			retry += 1
 			if retry > options.Retries() {
@@ -343,6 +346,7 @@ this records routes between each hop and the probe, with the probe as destinatio
 each(hop, probe) address pair is added to both GSS and LSS.
 */
 func probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop, LSS *safeSet, GSS *safeSet, options *TracerouteOptions, c ...chan TracerouteHop) (result TracerouteResult, err error) {
+	fmt.Println("probing back")
 	source := addressString(socketAddr)
 	result.Hops = make([]TracerouteHop, 0, len(forwardHops)) //prevent resizing
 
@@ -352,11 +356,7 @@ func probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop, LSS *safeSe
 	retry := 0
 	currentHop := len(forwardHops) - 1
 	for {
-		dest := forwardHops[currentHop].Host //string of address
 		hopAddr := forwardHops[currentHop].Address //probe the address
-		fmt.Println("current hop:", currentHop, "probing:", hopAddr)
-		//log.Println("TTL: ", ttl)
-
 		// Set up the socket to receive inbound packets
 		recvSocket, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_RAW, syscall.IPPROTO_ICMP)
 		if err != nil {
@@ -415,8 +415,8 @@ func probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop, LSS *safeSe
 			notify(hop, c)
 
 			result.Hops = append(result.Hops, hop)
-			GSS.Add(dest + source) //modification: add to GSS while probing back
-			LSS.Add(dest + source) //add to LSS while probing back
+			GSS.Add(addressString(hopAddr) +"-"+ source) //modification: add to GSS while probing back
+			LSS.Add(addressString(hopAddr) +"-" + source) //add to LSS while probing back
 
 			currentHop-=1
 			retry = 0
@@ -426,7 +426,6 @@ func probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop, LSS *safeSe
 				return result, nil
 			}
 		} else {
-			fmt.Println("retrying")
 			retry += 1
 			if retry > options.Retries() {
 				notify(TracerouteHop{Success: false, TTL: currentHop}, c)
@@ -438,7 +437,7 @@ func probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop, LSS *safeSe
 	}
 }
 
-func test() {
+func testJustProbes(addr string) {
 	testGSS := NewSafeSet()
 	testLSS := NewSafeSet()
 	options := &TracerouteOptions{}
@@ -449,7 +448,7 @@ func test() {
 		log.Fatal(err) //Todo: replace with non fatal err & return
 	}
 	hopChan := make(chan TracerouteHop, options.maxHops)
-	forwardResult, err := probeForward(sourceAddr, testGSS, "bugsincyberspace.com", options, hopChan)
+	forwardResult, err := probeForward(sourceAddr, testGSS, addr, options, hopChan)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -466,8 +465,22 @@ func test() {
 		fmt.Println(hop.AddressString())
 	}
 
+	fmt.Println("-------GSS-------")
+	fmt.Print(testGSS.ToCSV())
+	fmt.Println("-------LSS-------")
+	fmt.Print(testGSS.ToCSV())
+
+}
+
+func testConcurrent() {
+	GSS := NewSafeSet()
+	ips := []string{"bugsincyberspace.com", "wellesley.edu", "google.com", "github.com"}
+	sendProbes(GSS, ips)
+	fmt.Println("-------GSS-------")
+	fmt.Print(GSS.ToCSV())
 }
 
 func main(){
-	test()
+	//testJustProbes("bugsincyberspace.com")
+	testConcurrent()
 }
