@@ -250,10 +250,11 @@ func probeForward(socketAddr [4]byte, GSS *safeSet, dest string, options *Tracer
 	timeoutMs := (int64)(options.TimeoutMs())
 	tv := syscall.NsecToTimeval(1000 * 1000 * timeoutMs)
 
-	ttl := 1
+	ttl := 0
 	retry := 0
 	for {
 
+		ttl += 1
 		//log.Println("TTL: ", ttl)
 		start := time.Now()
 
@@ -312,9 +313,6 @@ func probeForward(socketAddr [4]byte, GSS *safeSet, dest string, options *Tracer
 
 			notify(hop, c)
 			
-			result.Hops = append(result.Hops, hop)
-
-			ttl += 1
 			retry = 0
 
 			hopDestString := hop.AddressString() + "-" + addressString(destAddr)
@@ -324,7 +322,7 @@ func probeForward(socketAddr [4]byte, GSS *safeSet, dest string, options *Tracer
 				closeNotify(c)
 				return result, nil
 			}
-
+			result.Hops = append(result.Hops, hop)
 			GSS.Add(hopDestString) //add to global stop set
 		} else {
 			retry += 1
