@@ -373,7 +373,7 @@ func (m *Monitor) probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop
 	currentHop := len(forwardHops) - 1
 	for {
 		hopAddr := forwardHops[currentHop].Address //probe the address
-		fmt.Println("backwards:")
+		fmt.Println("backwards:", hopAddr)
 		// Set up the socket to receive inbound packets
 		recvSocket, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_RAW, syscall.IPPROTO_ICMP)
 		if err != nil {
@@ -435,7 +435,7 @@ func (m *Monitor) probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop
 			m.GSS.Add(addressString(hopAddr) +"-"+ source) //modification: add to GSS while probing back
 			LSS.Add(addressString(hopAddr) +"-" + source) //add to LSS while probing back
 
-			currentHop-=1
+			currentHop--
 			retry = 0
 
 			if currentHop <= 0 {
@@ -492,7 +492,7 @@ func testJustProbes(addr string) {
 
 func testConcurrent() {
 	GSS := set.NewSafeSet()
-	ips := []string{"bugsincyberspace.com", "wellesley.edu", "google.com", "github.com"}
+	ips := []string{"192.124.249.164", "107.21.104.61", "104.26.11.229", "108.139.7.178"}
 	ipRange := ips[:]
 	m := &Monitor{GSS:GSS, ipRange:ipRange}
 	m.sendProbes()
