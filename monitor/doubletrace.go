@@ -23,7 +23,15 @@ const CEILING = 12
 
 type Monitor struct{
 	GSS *set.SafeSet
+	ipRange []string
 }
+
+/**
+func (m *Monitor, client net.RPC)newIPs {
+	divCall := client.Go(, args, quotient, nil)
+	replyCall := <-divCall.Done	// will be equal to divCall
+}
+**/
 
 //doubletree addon from paper, helps prevent overburdening destinations
 func (options *TracerouteOptions) SetMaxHopsRandom(floor int, ceiling int) {
@@ -38,7 +46,6 @@ func (options *TracerouteOptions) SetMaxHopsRandom(floor int, ceiling int) {
 func (options *TracerouteOptions) SetMaxHops(maxHops int) {
 	options.maxHops = maxHops
 }
-
 
 // Return the first non-loopback address as a 4 byte IP address. This address
 // is used for sending packets out.
@@ -192,12 +199,12 @@ func closeNotify(channels []chan TracerouteHop) {
 	}
 }
 
-func (m *Monitor) sendProbes(ips []string) {
+func (m *Monitor) sendProbes() {
 	NewNodes := set.NewSafeSet()
 	LSS := set.NewSafeSet()
 	var wg sync.WaitGroup
-	wg.Add(len(ips)) //one thread per IP
-	for _, ip := range(ips){
+	wg.Add(len(m.ipRange)) //one thread per IP
+	for _, ip := range(m.ipRange){
 		fmt.Println("probing", ip)
 		go m.probeAddr(&wg, NewNodes, LSS, ip)
 	}
@@ -244,7 +251,7 @@ func (m *Monitor) probeAddr(wg *sync.WaitGroup, NewNodes *set.SafeSet, LSS *set.
 // Returns a TracerouteResult which contains an array of hops. Each hop includes
 // the elapsed time and its IP address.
 func (m *Monitor) probeForward(socketAddr [4]byte, dest string, options *TracerouteOptions, c ...chan TracerouteHop) (result TracerouteResult, err error) {
-	fmt.Println("probe forward")
+	fmt.Println("probing forwards")
 	result.Hops = make([]TracerouteHop, 0, options.maxHops) //prevent resizing
 	destAddr, err := destAddr(dest)
 	result.DestinationAddress = destAddr
@@ -323,7 +330,10 @@ func (m *Monitor) probeForward(socketAddr [4]byte, dest string, options *Tracero
 			hopDestString := hop.AddressString() + "-" + addressString(destAddr)
 
 			// modification added here to stop if it hits node in GSS or LSS
-			if ttl > options.MaxHops() || currAddr == destAddr || m.GSS.Contains(hopDestString) {
+			if ttl >= options.MaxHops() || currAddr == destAddr || m.GSS.Contains(hopDestString) {
+				if m.GSS.Contains(hopDestString) {
+					fmt.Println("found seen node", hopDestString )
+				}
 				closeNotify(c)
 				return result, nil
 			}
@@ -352,6 +362,7 @@ this records routes between each hop and the probe, with the probe as destinatio
 each(hop, probe) address pair is added to both GSS and LSS.
 */
 func (m *Monitor) probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop, LSS *set.SafeSet, options *TracerouteOptions, c ...chan TracerouteHop) (result TracerouteResult, err error) {
+	fmt.Println("probing backwards")
 	source := addressString(socketAddr)
 	result.Hops = make([]TracerouteHop, 0, len(forwardHops)) //prevent resizing
 
@@ -362,6 +373,7 @@ func (m *Monitor) probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop
 	currentHop := len(forwardHops) - 1
 	for {
 		hopAddr := forwardHops[currentHop].Address //probe the address
+		fmt.Println("backwards:")
 		// Set up the socket to receive inbound packets
 		recvSocket, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_RAW, syscall.IPPROTO_ICMP)
 		if err != nil {
@@ -480,9 +492,10 @@ func testJustProbes(addr string) {
 
 func testConcurrent() {
 	GSS := set.NewSafeSet()
-	m := &Monitor{GSS:GSS}
 	ips := []string{"bugsincyberspace.com", "wellesley.edu", "google.com", "github.com"}
-	m.sendProbes(ips)
+	ipRange := ips[:]
+	m := &Monitor{GSS:GSS, ipRange:ipRange}
+	m.sendProbes()
 	fmt.Println("-------GSS-------")
 	fmt.Print(GSS.ToCSV())
 }
