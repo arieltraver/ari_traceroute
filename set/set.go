@@ -1,5 +1,5 @@
-//reference: https://www.davidkaya.com/sets-in-golang/
-package main
+//reference: https://www.davidkaya.com/Sets-in-golang/
+package Set
 import (
 	"sync"
 	"fmt"
@@ -8,40 +8,40 @@ import (
 )
 
 
-type set struct {
+type Set struct {
 	//using struct{} because an empty struct takes up 0 bytes
 	mp map[string]struct{}
 }
 
-func NewSet() *set {
-	s := &set{}
+func NewSet() *Set {
+	s := &Set{}
 	s.mp = make(map[string]struct{})
 	return s
 }
 
-/*unlock the set*/
-func (s *set) Contains(item string) bool {
+/*unlock the Set*/
+func (s *Set) Contains(item string) bool {
 	_, ok := s.mp[item]
 	return ok
 }
 
-func (s *set) Add(item string) {
+func (s *Set) Add(item string) {
 	s.mp[item] = struct{}{}
 }
 
-func (s *set) Remove(item string) {
+func (s *Set) Remove(item string) {
 	delete(s.mp, item)
 }
 
-//expands the set into its union with another set
-func (s1 *set) UnionWith(s2 *set) {
+//expands the Set into its union with another Set
+func (s1 *Set) UnionWith(s2 *Set) {
 	for key, _ := range(s2.mp) {
 		s1.mp[key] = struct{}{}
 	}
 }
 
-//reduces the set to its intersection with another set
-func (s1 *set) IntersectWith(s2 *set) {
+//reduces the Set to its intersection with another Set
+func (s1 *Set) IntersectWith(s2 *Set) {
 	for key, _ := range(s1.mp) {
 		if !(s2.Contains(key)) {
 			s1.Remove(key)
@@ -49,8 +49,8 @@ func (s1 *set) IntersectWith(s2 *set) {
 	}
 }
 
-//returns a new set which is the union of two sets
-func Union(s1 *set, s2 *set) *set {
+//returns a new Set which is the union of two Sets
+func Union(s1 *Set, s2 *Set) *Set {
 	s3 := NewSet()
 	for key, _ := range(s1.mp) {
 		s3.mp[key] = struct{}{}
@@ -61,7 +61,7 @@ func Union(s1 *set, s2 *set) *set {
 	return s3
 }
 
-func Intersection(s1 *set, s2 *set) *set {
+func Intersection(s1 *Set, s2 *Set) *Set {
 	s3 := NewSet()
 	for key, _ := range(s1.mp) {
 		if s2.Contains(key) {
@@ -71,8 +71,8 @@ func Intersection(s1 *set, s2 *set) *set {
 	return s3
 }
 
-//returns a new set that is s1 U s2'
-func IntersectionComplement(s1 *set, s2 *set) *set {
+//returns a new Set that is s1 U s2'
+func IntersectionComplement(s1 *Set, s2 *Set) *Set {
 	s3 := NewSet()
 	for key, _ := range(s1.mp) {
 		if !s2.Contains(key) {
@@ -82,8 +82,8 @@ func IntersectionComplement(s1 *set, s2 *set) *set {
 	return s3
 }
 
-//turns a set into a CSV
-func (s *set) ToCSV() string {
+//turns a Set into a CSV
+func (s *Set) ToCSV() string {
 	str := &strings.Builder{}
 	for item, _ := range(s.mp) {
 		str.WriteString(item + ",")
@@ -92,37 +92,37 @@ func (s *set) ToCSV() string {
 	return str.String()
 }
 
-type safeSet struct {
-	st *set
+type SafeSet struct {
+	st *Set
 	lock sync.Mutex
 }
 
-func NewSafeSet() *safeSet {
-	var sf safeSet
+func NewSafeSet() *SafeSet {
+	var sf SafeSet
 	sf.st = NewSet()
 	return &sf
 }
 
-func (s *safeSet) Add(item string) {
+func (s *SafeSet) Add(item string) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.st.Add(item)
 }
 
-func (s *safeSet) Remove(item string) {
+func (s *SafeSet) Remove(item string) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.st.Remove(item)
 }
 
-func (s *safeSet) Contains(item string) bool {
+func (s *SafeSet) Contains(item string) bool {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	t := s.st.Contains(item)
 	return t
 }
 
-func (s1 *safeSet) UnionWith(s2 *safeSet) {
+func (s1 *SafeSet) UnionWith(s2 *SafeSet) {
 	s1.lock.Lock()
 	defer s1.lock.Unlock()
 	s2.lock.Lock()
@@ -130,7 +130,7 @@ func (s1 *safeSet) UnionWith(s2 *safeSet) {
 	s1.st.UnionWith(s2.st)
 }
 
-func (s1 *safeSet) IntersectWith(s2 *safeSet) {
+func (s1 *SafeSet) IntersectWith(s2 *SafeSet) {
 	s1.lock.Lock()
 	defer s1.lock.Unlock()
 	s2.lock.Lock()
@@ -138,7 +138,7 @@ func (s1 *safeSet) IntersectWith(s2 *safeSet) {
 	s1.st.IntersectWith(s2.st)
 }
 
-func SafeUnion(s1 *safeSet, s2 *safeSet) *safeSet {
+func SafeUnion(s1 *SafeSet, s2 *SafeSet) *SafeSet {
 	s3 := NewSafeSet()
 	s1.lock.Lock()
 	defer s1.lock.Unlock()
@@ -150,7 +150,7 @@ func SafeUnion(s1 *safeSet, s2 *safeSet) *safeSet {
 	return s3
 }
 
-func (s *safeSet) ToCSV() string {
+func (s *SafeSet) ToCSV() string {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	str := s.st.ToCSV()
@@ -187,7 +187,7 @@ func testSets() {
 		fmt.Println("pizza is a vegetable???")
 	}
 
-	//union (new set) test
+	//union (new Set) test
 	ediblePlants := SafeUnion(vegetables, fruits)
 	fmt.Print(ediblePlants.ToCSV()) //lettuce carrot tomato apple banana (no order)
 
@@ -202,7 +202,7 @@ func testSets() {
 	fmt.Print(ediblePlants.ToCSV()) //apple banana lettuce carrot tomato (no order)
 }
 
-//to be used with Go's data race testing feature (go test -race set.go)
+//to be used with Go's data race testing feature (go test -race Set.go)
 func testSetsConcurrent() {
 	s1 := NewSafeSet()
 	s2 := NewSafeSet()
@@ -217,7 +217,7 @@ func testSetsConcurrent() {
 }
 
 //tries every function, many concurrent adds/removes
-func testRoutine(s1 *safeSet, s2 *safeSet, s3 *safeSet, wg *sync.WaitGroup){
+func testRoutine(s1 *SafeSet, s2 *SafeSet, s3 *SafeSet, wg *sync.WaitGroup){
 	defer wg.Done()
 	for i := 0; i < 5; i++ {
 		fmt.Print(s3.ToCSV())

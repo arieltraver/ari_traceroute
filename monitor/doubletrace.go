@@ -1,4 +1,4 @@
-package main
+package monitor
 
 import (
 	"errors"
@@ -9,6 +9,7 @@ import (
 	"sync"
 	"syscall"
 	"time"
+	"github.com/arieltraver/ari_traceroute/set"
 )
 
 const DEFAULT_PORT int = 33434
@@ -19,6 +20,10 @@ const DEFAULT_RETRIES = 3
 const DEFAULT_PACKET_SIZE = 52
 const FLOOR = 6
 const CEILING = 12
+
+type Monitor struct{
+	GSS *set.SafeSet
+}
 
 //doubletree addon from paper, helps prevent overburdening destinations
 func (options *TracerouteOptions) SetMaxHopsRandom(floor int, ceiling int) {
