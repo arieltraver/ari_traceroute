@@ -1,5 +1,5 @@
 //reference: https://www.davidkaya.com/Sets-in-golang/
-package Set
+package set
 import (
 	"sync"
 	"fmt"
