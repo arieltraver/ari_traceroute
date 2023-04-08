@@ -336,8 +336,8 @@ func probeForward(socketAddr [4]byte, dest string, options *TracerouteOptions, c
 			hopDestString := hop.AddressString() + "-" + addressString(destAddr)
 
 			// modification added here to stop if it hits node in GSS or LSS
-			if ttl >= options.MaxHops() || currAddr == destAddr || m.GSS.Contains(hopDestString) {
-				if m.GSS.Contains(hopDestString) {
+			if ttl >= options.MaxHops() || currAddr == destAddr || GSS.Contains(hopDestString) {
+				if GSS.Contains(hopDestString) {
 					fmt.Println("found seen node", hopDestString )
 				}
 				closeNotify(c)
@@ -438,7 +438,7 @@ func probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop, LSS *set.Sa
 			notify(hop, c)
 
 			result.Hops = append(result.Hops, hop)
-			m.GSS.Add(addressString(hopAddr) +"-"+ source) //modification: add to GSS while probing back
+			GSS.Add(addressString(hopAddr) +"-"+ source) //modification: add to GSS while probing back
 			LSS.Add(addressString(hopAddr) +"-" + source) //add to LSS while probing back
 
 			currentHop--
