@@ -27,10 +27,7 @@ var ipRange []string
 var GSS *set.SafeSet
 var LSS *set.SafeSet
 
-type Monitor struct{
-	GSS *set.SafeSet
-	ipRange []string
-}
+type Monitor int
 
 /**
 func (m *Monitor, client net.RPC)newIPs {
@@ -462,7 +459,6 @@ func probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop, LSS *set.Sa
 
 func testJustProbes(addr string) {
 	testGSS := set.NewSafeSet()
-	m := &Monitor{GSS:testGSS}
 	testLSS := set.NewSafeSet()
 	options := &TracerouteOptions{}
 	options.SetMaxHopsRandom(FLOOR, CEILING)
