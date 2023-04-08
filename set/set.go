@@ -216,6 +216,20 @@ func testSetsConcurrent() {
 	fmt.Println("done")
 }
 
+func (s *SafeSet) Set() *Set {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	st := s.st
+	return st
+}
+
+//replaces the set with a new empty set
+func (s *SafeSet) Wipe() {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.st = NewSet()
+}
+
 //tries every function, many concurrent adds/removes
 func testRoutine(s1 *SafeSet, s2 *SafeSet, s3 *SafeSet, wg *sync.WaitGroup){
 	defer wg.Done()
