@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"time"
 	"github.com/arieltraver/ari_traceroute/set"
+	"net/rpc"
+	"net/http"
 )
 
 const DEFAULT_PORT int = 33434
@@ -20,6 +22,10 @@ const DEFAULT_RETRIES = 3
 const DEFAULT_PACKET_SIZE = 52
 const FLOOR = 6
 const CEILING = 12
+
+var ipRange []string
+var GSS *set.SafeSet
+var LSS *set.SafeSet
 
 type Monitor struct{
 	GSS *set.SafeSet
@@ -199,19 +205,19 @@ func closeNotify(channels []chan TracerouteHop) {
 	}
 }
 
-func (m *Monitor) sendProbes() {
+func sendProbes() {
 	NewNodes := set.NewSafeSet()
 	LSS := set.NewSafeSet()
 	var wg sync.WaitGroup
-	wg.Add(len(m.ipRange)) //one thread per IP
-	for _, ip := range(m.ipRange){
+	wg.Add(len(ipRange)) //one thread per IP
+	for _, ip := range(ipRange){
 		fmt.Println("probing", ip)
-		go m.probeAddr(&wg, NewNodes, LSS, ip)
+		go probeAddr(&wg, NewNodes, LSS, ip)
 	}
 	wg.Wait()
 }
 
-func (m *Monitor) probeAddr(wg *sync.WaitGroup, NewNodes *set.SafeSet, LSS *set.SafeSet, ip string) {
+func probeAddr(wg *sync.WaitGroup, NewNodes *set.SafeSet, LSS *set.SafeSet, ip string) {
 	defer wg.Done()
 	options := &TracerouteOptions{}
 	options.SetMaxHopsRandom(FLOOR, CEILING)
@@ -220,13 +226,13 @@ func (m *Monitor) probeAddr(wg *sync.WaitGroup, NewNodes *set.SafeSet, LSS *set.
 		log.Fatal(err) //Todo: replace with non fatal err & return
 	}
 	forward := make(chan TracerouteHop, options.maxHops)
-	forwardHops, err := m.probeForward(sourceAddr, ip, options, forward)
+	forwardHops, err := probeForward(sourceAddr, ip, options, forward)
 	if err != nil {
 		log.Fatal(err)
 	}
 	backward := make(chan TracerouteHop, options.maxHops)
 	//
-	_, err = m.probeBackwards(sourceAddr,forwardHops.Hops, LSS, options, backward)
+	_, err = probeBackwards(sourceAddr,forwardHops.Hops, LSS, options, backward)
 	if err != nil {
 		log.Fatal(err) //TODO: do not crash the whole program if one trace fails.
 	}
@@ -250,7 +256,7 @@ func (m *Monitor) probeAddr(wg *sync.WaitGroup, NewNodes *set.SafeSet, LSS *set.
 //
 // Returns a TracerouteResult which contains an array of hops. Each hop includes
 // the elapsed time and its IP address.
-func (m *Monitor) probeForward(socketAddr [4]byte, dest string, options *TracerouteOptions, c ...chan TracerouteHop) (result TracerouteResult, err error) {
+func probeForward(socketAddr [4]byte, dest string, options *TracerouteOptions, c ...chan TracerouteHop) (result TracerouteResult, err error) {
 	fmt.Println("probing forwards")
 	result.Hops = make([]TracerouteHop, 0, options.maxHops) //prevent resizing
 	destAddr, err := destAddr(dest)
@@ -338,7 +344,7 @@ func (m *Monitor) probeForward(socketAddr [4]byte, dest string, options *Tracero
 				return result, nil
 			}
 			result.Hops = append(result.Hops, hop)
-			m.GSS.Add(hopDestString) //add to global stop set
+			GSS.Add(hopDestString) //add to global stop set
 		} else {
 			retry += 1
 			if retry > options.Retries() {
@@ -361,7 +367,7 @@ unlike forwards route discovery, backwards goes from probe to each hop.
 this records routes between each hop and the probe, with the probe as destination.
 each(hop, probe) address pair is added to both GSS and LSS.
 */
-func (m *Monitor) probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop, LSS *set.SafeSet, options *TracerouteOptions, c ...chan TracerouteHop) (result TracerouteResult, err error) {
+func probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop, LSS *set.SafeSet, options *TracerouteOptions, c ...chan TracerouteHop) (result TracerouteResult, err error) {
 	fmt.Println("probing backwards")
 	source := addressString(socketAddr)
 	result.Hops = make([]TracerouteHop, 0, len(forwardHops)) //prevent resizing
@@ -404,7 +410,7 @@ func (m *Monitor) probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop
 
 		/*
 		planned modification: keep checksum constant using payload?...
-		 :In UDP probes, it is the checksum field. This requires manipulating the payload
+		 :"In UDP probes, it is the checksum field. This requires manipulating the payload
 		to yield the desired checksum, as packets with an incorrect checksum are liable
 		to be discarded."
 		GOAL: replace "[]byte{0x0}" with a modified payload that keeps the checksum constant
@@ -466,7 +472,7 @@ func testJustProbes(addr string) {
 		log.Fatal(err) //Todo: replace with non fatal err & return
 	}
 	hopChan := make(chan TracerouteHop, options.maxHops)
-	forwardResult, err := m.probeForward(sourceAddr, addr, options, hopChan)
+	forwardResult, err := probeForward(sourceAddr, addr, options, hopChan)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -475,7 +481,7 @@ func testJustProbes(addr string) {
 	}
 	fmt.Println("-----------------")
 	backward := make(chan TracerouteHop, options.maxHops)
-	backResult, err := m.probeBackwards(sourceAddr, forwardResult.Hops, testLSS, options, backward)
+	backResult, err := probeBackwards(sourceAddr, forwardResult.Hops, testLSS, options, backward)
 	if err != nil {
 		log.Fatal(err) //TODO: do not crash the whole program if one trace fails.
 	}
@@ -493,14 +499,24 @@ func testJustProbes(addr string) {
 func testConcurrent() {
 	GSS := set.NewSafeSet()
 	ips := []string{"192.124.249.164", "107.21.104.61", "104.26.11.229", "108.139.7.178"}
-	ipRange := ips[:]
-	m := &Monitor{GSS:GSS, ipRange:ipRange}
-	m.sendProbes()
+	ipRange = ips[:]
+	sendProbes()
 	fmt.Println("-------GSS-------")
 	fmt.Print(GSS.ToCSV())
 }
 
+func connect(port string) {
+	api := new(Monitor)
+	err := rpc.Register(api)
+	if err != nil {
+		log.Fatal("error registering the RPCs", err)
+	}
+	rpc.HandleHTTP()
+	go http.ListenAndServe(port, nil)
+	log.Printf("serving rpc on port" + port)
+}
+
 func main(){
 	//testJustProbes("bugsincyberspace.com")
-	testConcurrent()
+	connect("3000")
 }
