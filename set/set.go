@@ -7,42 +7,56 @@ import (
 	"strconv"
 )
 
+//TODO: make set an interface to make safeset work on both intsets and regular string sets.
+
+
+type IntSet struct {
+	Mp map[int]struct{}
+}
+
+func (s *IntSet) Add(i int) {
+	s.Mp[i] = struct{}{}
+}
+
+func (s *IntSet) Remove(i int) {
+	delete(s.Mp, i)
+}
 
 type Set struct {
-	//using struct{} because an empty struct takes up 0 bytes
-	mp map[string]struct{}
+	//using struct{} because an eMpty struct takes up 0 bytes
+	Mp map[string]struct{} //TODO: make this private and make an enumerate method
 }
 
 func NewSet() *Set {
 	s := &Set{}
-	s.mp = make(map[string]struct{})
+	s.Mp = make(map[string]struct{})
 	return s
 }
 
 /*unlock the Set*/
 func (s *Set) Contains(item string) bool {
-	_, ok := s.mp[item]
+	_, ok := s.Mp[item]
 	return ok
 }
 
 func (s *Set) Add(item string) {
-	s.mp[item] = struct{}{}
+	s.Mp[item] = struct{}{}
 }
 
 func (s *Set) Remove(item string) {
-	delete(s.mp, item)
+	delete(s.Mp, item)
 }
 
 //expands the Set into its union with another Set
 func (s1 *Set) UnionWith(s2 *Set) {
-	for key, _ := range(s2.mp) {
-		s1.mp[key] = struct{}{}
+	for key, _ := range(s2.Mp) {
+		s1.Mp[key] = struct{}{}
 	}
 }
 
 //reduces the Set to its intersection with another Set
 func (s1 *Set) IntersectWith(s2 *Set) {
-	for key, _ := range(s1.mp) {
+	for key, _ := range(s1.Mp) {
 		if !(s2.Contains(key)) {
 			s1.Remove(key)
 		}
@@ -52,31 +66,31 @@ func (s1 *Set) IntersectWith(s2 *Set) {
 //returns a new Set which is the union of two Sets
 func Union(s1 *Set, s2 *Set) *Set {
 	s3 := NewSet()
-	for key, _ := range(s1.mp) {
-		s3.mp[key] = struct{}{}
+	for key, _ := range(s1.Mp) {
+		s3.Mp[key] = struct{}{}
 	}
-	for key, _ := range(s2.mp) {
-		s3.mp[key] = struct{}{}
+	for key, _ := range(s2.Mp) {
+		s3.Mp[key] = struct{}{}
 	}
 	return s3
 }
 
 func Intersection(s1 *Set, s2 *Set) *Set {
 	s3 := NewSet()
-	for key, _ := range(s1.mp) {
+	for key, _ := range(s1.Mp) {
 		if s2.Contains(key) {
-			s3.mp[key] = struct{}{}
+			s3.Mp[key] = struct{}{}
 		}
 	}
 	return s3
 }
 
 //returns a new Set that is s1 U s2'
-func IntersectionComplement(s1 *Set, s2 *Set) *Set {
+func IntersectionCoMplement(s1 *Set, s2 *Set) *Set {
 	s3 := NewSet()
-	for key, _ := range(s1.mp) {
+	for key, _ := range(s1.Mp) {
 		if !s2.Contains(key) {
-			s3.mp[key] = struct{}{}
+			s3.Mp[key] = struct{}{}
 		}
 	}
 	return s3
@@ -85,7 +99,7 @@ func IntersectionComplement(s1 *Set, s2 *Set) *Set {
 //turns a Set into a CSV
 func (s *Set) ToCSV() string {
 	str := &strings.Builder{}
-	for item, _ := range(s.mp) {
+	for item, _ := range(s.Mp) {
 		str.WriteString(item + ",")
 	}
 	str.WriteRune('\n')
@@ -122,12 +136,18 @@ func (s *SafeSet) Contains(item string) bool {
 	return t
 }
 
-func (s1 *SafeSet) UnionWith(s2 *SafeSet) {
+func (s1 *SafeSet) SafeUnionWith(s2 *SafeSet) {
 	s1.lock.Lock()
 	defer s1.lock.Unlock()
 	s2.lock.Lock()
 	defer s2.lock.Unlock()
 	s1.st.UnionWith(s2.st)
+}
+
+func (s1 *SafeSet) UnionWith(s2 *Set){
+	s1.lock.Lock()
+	defer s1.lock.Unlock()
+	s1.st.UnionWith(s2)
 }
 
 func (s1 *SafeSet) IntersectWith(s2 *SafeSet) {
@@ -223,7 +243,7 @@ func (s *SafeSet) Set() *Set {
 	return st
 }
 
-//replaces the set with a new empty set
+//replaces the set with a new eMpty set
 func (s *SafeSet) Wipe() {
 	s.lock.Lock()
 	defer s.lock.Unlock()

@@ -1,121 +1,106 @@
-package main
+package leader
 
 import (
-	"fmt"
-	"log"
-	"net"
 	"os"
 	"sync"
-	"time"
+
+	"github.com/arieltraver/ari_traceroute/set"
 )
 
 var MONITORS int = 5 //number of chunks to divide file into
 var CHUNKS int = 10
+var allIPS *set.SafeSet
+var unlockPlease []chan bool
+var ipTable []*ipRange 
 
-// a locked channel
-type SafeChan struct {
-	ranges chan int
+//a pair: who's using an IP range (locked for concurrency), and also that range (locked)
+type ipRange struct {
+	ips []string
+	currentProbe  string
+	stops *set.SafeSet
 	lock sync.Mutex
 }
 
-func awaitPop(sc *SafeChan) int {
-	sc.lock.Lock()
-	c := <- sc.ranges
-	sc.lock.Unlock()
-	return c
+type Leader int
+
+type ResultArgs struct {
+	NewGSS *set.Set
+	News *set.Set
+	id string
+	index int
 }
 
-func awaitPush(sc *SafeChan, i int) {
-	sc.lock.Lock()
-	sc.ranges <- i
-	sc.lock.Unlock()
+type ResultReply struct {
+	ok bool
 }
 
-//blocks till a slice is available for processing, puts it back if seen already
-func popCheckPush(sc *SafeChan, seen []bool) int {
-	sc.lock.Lock()
-	i := <- sc.ranges
-	if seen[i] {
-		sc.ranges <- i //put it back, we've seen it before.
-		sc.lock.Unlock()
-		return -1
-	} else {
-		seen[i] = true
-		sc.lock.Unlock()
-		return i //this is the chunk to work on
-	}
+type IpArgs struct {
+	probeId string
 }
 
-// Talks to a single remote monitor.
-func handleConnection(c net.Conn, sc *SafeChan, wait *sync.WaitGroup, start int) {
-	defer wait.Done()
-	count := 0
-	seen := make([]bool, CHUNKS) //which chunks have we seen
-	for {
-		if count >= CHUNKS {
-			c.Close()
-			return
+type IpReply struct {
+	ips []string
+}
+
+//each id is associated with an index in the table.
+//the table records which probes have already hit which addresses.
+type seenMap struct {
+	idToIndex map[string]int
+	seenRanges []*set.IntSet //TODO replace with int set
+	lock sync.Mutex
+}
+
+//given the id of a probe, finds an unseen range for it.
+func (s *seenMap) findNewRange(id string) ([]string, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	i := s.idToIndex[id]
+	ranges := s.seenRanges[i]
+	//TODO: empty set check.
+	//TODO make set interface, enumerable, etc etc
+	for index := range(ranges.Mp) {
+		thisRange := ipTable[index]
+		thisRange.lock.Lock()
+		if thisRange.currentProbe == "" {
+			thisRange.currentProbe = id
+			freeIps := thisRange.ips
+			thisRange.lock.Unlock()
+			return freeIps, nil
 		}
-		//loop repeats as it digs through s for an unread slice
-		s := popCheckPush(sc, seen) //take a number off, have we seen it? if not, put it back
-		if s >= 0 { //we have not seen it
-			count ++
-			fmt.Println(s)
-			start = s
-			time.Sleep(time.Millisecond * 50)
-			awaitPush(sc, start) //push the last number onto the channel
-		}
+		thisRange.lock.Unlock()
 	}
+	return nil, os.ErrClosed //TODO replace with custom error
 }
 
-// Waits for new connections on port (specified by net.Listener). Serves each
-// worker with a differecnt goroutine.
-func waitOnConnections(listener net.Listener, complete chan bool) {
-	var wait sync.WaitGroup
-	c := make(chan int, CHUNKS + 1) //store free chunks in a queue
-	sc := &SafeChan{ranges:c} //lock to prevent data races
+//accepts results of a trace from a node.
+func (*Leader) TranserResults(args ResultArgs, reply *ResultReply) error {
+	//TODO: put the results in the global data structure etc...
 
-	//connect to all monitors
-	for i := 0; i < MONITORS; i++ {
-		conn, err := listener.Accept()
-		if err != nil {
-			log.Println("failed connection")
-		} else { //if one connection fails you can have more
-			fmt.Println("new host joining:", conn.RemoteAddr())
-			wait.Add(1)
-			go handleConnection(conn, sc, &wait, i) // each client served by a different routine
-		}
+	thisRange := ipTable[args.index]
+	thisRange.lock.Lock()
+	defer thisRange.lock.Unlock()
+
+	//check if this node actually was registered with this range.
+	rangeOwner := thisRange.currentProbe
+	if rangeOwner != args.id {
+		reply.ok = false
+		ipTable[args.index].lock.Unlock()
+		return os.ErrInvalid //TODO replace with custom error.
 	}
+	thisRange.currentProbe = "" //no id associated here anymore
 
-	//add chunks to the channel once all hosts are connected
-	for i := 0; i < CHUNKS; i++ {
-		c <- i
-	}
+	thisRange.stops.UnionWith(args.NewGSS)
+	allIPS.UnionWith(args.News)
 
-	wait.Wait()
-	//give an IP range to each monitor
-	//wait for all IPs to complete their range
-	//cycle through so that all monitors see all ranges
-	complete <- true
+	unlockPlease[args.index] <- true //request to unlock this set.
+	return nil
+}
+
+func (*Leader) GetIPs(args IpArgs, reply *IpReply) error {
+	probeId := args.probeId
+	
+	//TODO: reserve a section of IPS, put it in reply, spawn lock process, etc
+	return nil
 }
 
 
-func main() {
-	arguments := os.Args
-	if len(arguments) < 2 {
-		fmt.Println("Usage: 'leader port'")
-		return
-	}
-	PORT := ":" + arguments[1]
-	listener, err := net.Listen("tcp4", PORT)
-	if err != nil {log.Fatal(err)}
-	fmt.Println("listening on port", arguments[1])
-
-	complete := make(chan bool, 1)
-	// initialize a global file
-	go waitOnConnections(listener, complete)
-
-	if <-complete {
-		fmt.Println("done")
-	}
-}
