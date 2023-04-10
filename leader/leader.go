@@ -4,6 +4,9 @@ import (
 	"os"
 	"sync"
 	"github.com/arieltraver/ari_traceroute/set"
+	"time"
+	"log"
+	"errors"
 )
 
 var MONITORS int = 5 //number of chunks to divide file into
@@ -70,7 +73,7 @@ func findNewRange(id string) ([]string, int, error) {
 		thisRange.lock.Unlock()
 	}
 	//everything in use
-	return nil, -1, os.ErrClosed //TODO replace with custom error saying "everything in use"
+	return nil, -1, errors.New("no free IPs")
 }
 
 //accepts results of a trace from a node.
@@ -84,7 +87,7 @@ func (*Leader) TransferResults(args ResultArgs, reply *ResultReply) error {
 	rangeOwner := thisRange.currentProbe
 	if rangeOwner != args.id {
 		reply.ok = false
-		return os.ErrInvalid //TODO replace with custom error, "ips being probed by another node"
+		return errors.New("ips in use by other probe")
 	}
 	thisRange.currentProbe = "" //no id associated here anymore
 
@@ -106,17 +109,16 @@ func (*Leader) GetIPs(args IpArgs, reply *IpReply) error {
 }
 
 func waitOnProbe(probeId string, index int) error {
-	//make timer
+	probeTimer := time.NewTimer(60 * time.Second)
 	for {
 		select {
 		case <- unlockPlease[index]: //second http request occured, result stored
 			return nil
+		case <- probeTimer.C:
+			log.Println("probe took too long")
+			return errors.New("probe timeout")
 		}
-		//TODO: case <- timer:
-			//unlock the range
-			//return error "probe took too long"
 	}
-
 }
 
 

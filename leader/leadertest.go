@@ -4,7 +4,7 @@ import (
 	"net/rpc"
 	"log"
 	"time"
-	"github.com/arieltraver/ari_traceroute/set"
+	//"github.com/arieltraver/ari_traceroute/set"
 )
 
 func dialLeader(address string) *rpc.Client {
