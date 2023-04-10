@@ -1,7 +1,8 @@
 package leader
 
 import (
-	//"os"
+	"net/rpc"
+	"net/http"
 	"sync"
 	"github.com/arieltraver/ari_traceroute/set"
 	"time"
@@ -121,19 +122,35 @@ func waitOnProbe(probeId string, index int) error {
 	}
 }
 
+func connect(port string) {
+	api := new(Leader)
+	err := rpc.Register(api)
+	if err != nil {
+		log.Fatal("error registering the RPCs", err)
+	}
+	rpc.HandleHTTP()
+	go http.ListenAndServe(port, nil)
+	log.Printf("serving rpc on port" + port)
+}
+
 func test() {
 	ips1 := []string {
 		"192.124.249.164", //bugsincyberspace.com
 		"129.186.120.3", //bugguide.net
 		"172.67.199.120", //buglife.org.uk
 	}
-	ipRange1 := ipRange{ips:ips1[:], stops:set.NewSafeSet(), currentProbe:""}
+	ipRange1 := &ipRange{ips:ips1[:], stops:set.NewSafeSet(), currentProbe:""}
 
 	ips2 := []string {
 		"13.35.83.221", //code.org
 		"104.18.8.221", //codeacademy.com
 		"76.223.115.82", //w3schools.com
 	}
-	ipRange2 := ipRange{ips:ips2[:], stops:set.NewSafeSet(), currentProbe:""}
+	ipRange2 := &ipRange{ips:ips2[:], stops:set.NewSafeSet(), currentProbe:""}
+
+	ipTable = []*ipRange{ipRange1, ipRange2} //add ips to global data structure
+
+	connect("3000")
+
 }
 
