@@ -3,7 +3,6 @@ package leader
 import (
 	"os"
 	"sync"
-
 	"github.com/arieltraver/ari_traceroute/set"
 )
 
