@@ -1,7 +1,7 @@
 package leader
 
 import (
-	"os"
+	//"os"
 	"sync"
 	"github.com/arieltraver/ari_traceroute/set"
 	"time"
@@ -121,4 +121,19 @@ func waitOnProbe(probeId string, index int) error {
 	}
 }
 
+func test() {
+	ips1 := []string {
+		"192.124.249.164", //bugsincyberspace.com
+		"129.186.120.3", //bugguide.net
+		"172.67.199.120", //buglife.org.uk
+	}
+	ipRange1 := ipRange{ips:ips1[:], stops:set.NewSafeSet(), currentProbe:""}
+
+	ips2 := []string {
+		"13.35.83.221", //code.org
+		"104.18.8.221", //codeacademy.com
+		"76.223.115.82", //w3schools.com
+	}
+	ipRange2 := ipRange{ips:ips2[:], stops:set.NewSafeSet(), currentProbe:""}
+}
 
