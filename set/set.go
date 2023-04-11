@@ -2,9 +2,9 @@
 package set
 import (
 	"sync"
-	"fmt"
+	//"fmt"
 	"strings"
-	"strconv"
+	//"strconv"
 )
 
 //TODO: make set an interface to make safeset work on both intsets and regular string sets.
@@ -86,7 +86,7 @@ func Intersection(s1 *Set, s2 *Set) *Set {
 }
 
 //returns a new Set that is s1 U s2'
-func IntersectionCoMplement(s1 *Set, s2 *Set) *Set {
+func IntersectionComplement(s1 *Set, s2 *Set) *Set {
 	s3 := NewSet()
 	for key, _ := range(s1.Mp) {
 		if !s2.Contains(key) {
@@ -177,64 +177,6 @@ func (s *SafeSet) ToCSV() string {
 	return str
 }
 
-func testSets() {
-	fruits := NewSafeSet()
-	vegetables := NewSafeSet()
-	fruits.Add("apple")
-	fruits.Add("banana")
-	fruits.Add("tomato")
-
-	//contains test
-	if (fruits.Contains("banana")) {
-		fmt.Println("banana is a fruit")
-	} else {
-		fmt.Println("why isn't banana a fruit?")
-	}
-
-	//remove null test
-	fruits.Remove("onion") //nothing should happen
-
-	vegetables.Add("lettuce")
-	vegetables.Add("carrot")
-	vegetables.Add("tomato")
-	vegetables.Add("pizza")
-
-	//remove non null test
-	vegetables.Remove("pizza")
-	if (!(vegetables.Contains("pizza"))){
-		fmt.Println("pizza is not a vegetable")
-	} else {
-		fmt.Println("pizza is a vegetable???")
-	}
-
-	//union (new Set) test
-	ediblePlants := SafeUnion(vegetables, fruits)
-	fmt.Print(ediblePlants.ToCSV()) //lettuce carrot tomato apple banana (no order)
-
-	//intersection (in place) test
-	vegetables.IntersectWith(fruits)
-	fmt.Println("this is both a fruit and a vegetable:")
-	fmt.Print(vegetables.ToCSV()) //tomato, 
-
-	//union (in place) test
-	ediblePlants.Remove("tomato")
-	ediblePlants.UnionWith(fruits) //bring back tomato
-	fmt.Print(ediblePlants.ToCSV()) //apple banana lettuce carrot tomato (no order)
-}
-
-//to be used with Go's data race testing feature (go test -race Set.go)
-func testSetsConcurrent() {
-	s1 := NewSafeSet()
-	s2 := NewSafeSet()
-	s3 := NewSafeSet()
-	var wg sync.WaitGroup
-	wg.Add(10)
-	for i := 0; i < 10; i ++ {
-		go testRoutine(s1, s2, s3, &wg)
-	}
-	wg.Wait()
-	fmt.Println("done")
-}
 
 func (s *SafeSet) Set() *Set {
 	s.lock.Lock()
@@ -249,7 +191,7 @@ func (s *SafeSet) Wipe() {
 	defer s.lock.Unlock()
 	s.st = NewSet()
 }
-
+/*
 //tries every function, many concurrent adds/removes
 func testRoutine(s1 *SafeSet, s2 *SafeSet, s3 *SafeSet, wg *sync.WaitGroup){
 	defer wg.Done()
@@ -263,3 +205,4 @@ func testRoutine(s1 *SafeSet, s2 *SafeSet, s3 *SafeSet, wg *sync.WaitGroup){
 		s3.Add("test")
 	}
 }
+*/

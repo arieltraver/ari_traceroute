@@ -1,4 +1,4 @@
-package leader
+package main
 
 import (
 	"net/rpc"
@@ -8,6 +8,7 @@ import (
 	"time"
 	"log"
 	"errors"
+	"fmt"
 )
 
 var MONITORS int = 5 //number of chunks to divide file into
@@ -30,20 +31,20 @@ type Leader int
 type ResultArgs struct {
 	NewGSS *set.Set
 	News *set.Set
-	id string
-	index int
+	Id string
+	Index int
 }
 
 type ResultReply struct {
-	ok bool
+	Ok bool
 }
 
 type IpArgs struct {
-	probeId string
+	ProbeId string
 }
 
 type IpReply struct {
-	ips []string
+	Ips []string
 }
 
 
@@ -80,14 +81,14 @@ func findNewRange(id string) ([]string, int, error) {
 //accepts results of a trace from a node.
 func (*Leader) TransferResults(args ResultArgs, reply *ResultReply) error {
 
-	thisRange := ipTable[args.index] //look in the table for the ip range
+	thisRange := ipTable[args.Index] //look in the table for the ip range
 	thisRange.lock.Lock()
 	defer thisRange.lock.Unlock()
 
 	//check if this node actually was registered with this range.
 	rangeOwner := thisRange.currentProbe
-	if rangeOwner != args.id {
-		reply.ok = false
+	if rangeOwner != args.Id {
+		reply.Ok = false
 		return errors.New("ips in use by other probe")
 	}
 	thisRange.currentProbe = "" //no id associated here anymore
@@ -96,16 +97,17 @@ func (*Leader) TransferResults(args ResultArgs, reply *ResultReply) error {
 	allIPS.UnionWith(args.News) //register all new, never-before-seen nodes
 	//TODO register new edges in some kind of graph data structure
 
-	unlockPlease[args.index] <- true //request to unlock this set, a routine is listening.
+	unlockPlease[args.Index] <- true //request to unlock this set, a routine is listening.
 	return nil
 }
 
 func (*Leader) GetIPs(args IpArgs, reply *IpReply) error {
-	probeId := args.probeId
+	probeId := args.ProbeId
 	ips, index, _ := findNewRange(probeId)
 	//TODO error handling
-	reply.ips = ips //node gets this
-	go waitOnProbe(args.probeId, index) //wait for probe to either time out, or finish.
+	reply.Ips = ips //node gets this
+	fmt.Println(index)
+	//go waitOnProbe(args.probeId, index) //wait for probe to either time out, or finish.
 	return nil
 }
 
@@ -130,7 +132,7 @@ func connect(port string) {
 	}
 	rpc.HandleHTTP()
 	go http.ListenAndServe(port, nil)
-	log.Printf("serving rpc on port" + port)
+	log.Printf("serving rpc on port " + port)
 }
 
 func test() {
@@ -150,7 +152,11 @@ func test() {
 
 	ipTable = []*ipRange{ipRange1, ipRange2} //add ips to global data structure
 
-	connect("3000")
+	go connect("localhost:4000")
 
 }
 
+func main() {
+	test();
+	time.Sleep(600 * time.Second)
+}
