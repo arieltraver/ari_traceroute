@@ -26,6 +26,13 @@ type ipRange struct {
 	lock sync.Mutex
 }
 
+func (i *ipRange) Size() int {
+	i.lock.Lock()
+	defer i.lock.Unlock()
+	l := len(i.ips)
+	return l
+}
+
 type Leader int
 
 type ResultArgs struct {
@@ -60,7 +67,18 @@ func findNewRange(id string) ([]string, int, error) {
 	seenRanges.lock.Lock()
 	seenRanges.lock.Unlock() //TODO: lock the range but not the whole table.
 	//TODO: empty set check. return error "{id} has seen all ip ranges"
-	indexes := seenRanges.rangesSeenBy[id]
+	
+	indexes, ok := seenRanges.rangesSeenBy[id]
+
+	//TODO: make registration separate?
+	if !ok { //this probe is New, register seen ip ranges for it
+		r := set.NewIntSet()
+		l := len(ipTable)
+		for i := 0; i < l; i++ {
+			r.Add(i)
+		}
+		seenRanges.rangesSeenBy[id] = r
+	}
 
 	//TODO make set iteratable
 	for index, _ := range(indexes.Mp) {
@@ -102,8 +120,7 @@ func (*Leader) TransferResults(args ResultArgs, reply *ResultReply) error {
 }
 
 func (*Leader) GetIPs(args IpArgs, reply *IpReply) error {
-	probeId := args.ProbeId
-	ips, index, _ := findNewRange(probeId)
+	ips, index, _ := findNewRange(args.ProbeId)
 	//TODO error handling
 	reply.Ips = ips //node gets this
 	fmt.Println(index)
@@ -149,8 +166,10 @@ func test() {
 		"76.223.115.82", //w3schools.com
 	}
 	ipRange2 := &ipRange{ips:ips2[:], stops:set.NewSafeSet(), currentProbe:""}
-
 	ipTable = []*ipRange{ipRange1, ipRange2} //add ips to global data structure
+	seen := make(map[string]*set.IntSet)
+	seenRanges = &seenMap{rangesSeenBy:seen} //TODO make this readable
+
 
 	go connect("localhost:4000")
 

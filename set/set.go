@@ -33,6 +33,16 @@ func NewSet() *Set {
 	return s
 }
 
+func NewIntSet() *IntSet {
+	s := &IntSet{}
+	s.Mp = make(map[int]struct{})
+	return s
+}
+
+func (s *Set) Size() int {
+	return len(s.Mp)
+}
+
 /*unlock the Set*/
 func (s *Set) Contains(item string) bool {
 	_, ok := s.Mp[item]
