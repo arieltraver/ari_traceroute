@@ -78,6 +78,7 @@ func findNewRange(id string) ([]string, int, error) {
 			r.Add(i)
 		}
 		seenRanges.rangesSeenBy[id] = r
+		indexes = seenRanges.rangesSeenBy[id]
 	}
 
 	//TODO make set iteratable
