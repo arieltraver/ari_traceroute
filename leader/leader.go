@@ -109,13 +109,21 @@ func (*Leader) TransferResults(args ResultArgs, reply *ResultReply) error {
 	rangeOwner := thisRange.currentProbe
 	if rangeOwner != args.Id {
 		reply.Ok = false
+		if rangeOwner == "" {
+			return errors.New("you took too long")
+		}
 		return errors.New("ips in use by other probe")
 	}
 	thisRange.currentProbe = "" //no id associated here anymore
 
 	thisRange.stops.UnionWith(args.NewGSS) //register new (hop, dest) pairs to this range of IPs
 	allIPs.UnionWith(args.News) //register all new, never-before-seen nodes
+	seenRanges.lock.Lock()
+	defer seenRanges.lock.Unlock()
+	seenRanges.rangesSeenBy[args.Id].Remove(args.Index) //done w this range!
+
 	//TODO register new edges in some kind of graph data structure
+	fmt.Println(thisRange.stops.ToCSV()) //TODO remove this is test
 
 	unlockPlease[args.Index] <- true //request to unlock this set, a routine is listening.
 	reply.Ok = true
@@ -137,14 +145,24 @@ func waitOnProbe(probeId string, index int) error {
 	for {
 		select {
 		case <- unlockPlease[index]: //second http request occured, result stored
-			fmt.Println("transfer worked")
-			return nil
+			fmt.Println(allIPs.ToCSV()) //TODO remove, this is test
+			//TODO call function which frees up the range again
 		case <- probeTimer.C:
 			log.Println("probe took too long")
+			go freeRange(index)
 			return errors.New("probe timeout")
 		}
 	}
 }
+
+
+func freeRange(index int) {
+	thisRange := ipTable[index] //look in the table for the ip range
+	thisRange.lock.Lock()
+	defer thisRange.lock.Unlock()
+	thisRange.currentProbe = ""
+}
+
 
 //set up http server
 func connect(port string) {

@@ -92,6 +92,7 @@ func testAll() {
 	fmt.Println("connected to:", address)
 
 	index := getIPRange(leader)
+	//time.Sleep(60 * time.Second) //turn this on to see if range is freed successfully
 	sendIPRange(leader, index)
 
 }
