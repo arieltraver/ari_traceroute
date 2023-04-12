@@ -21,7 +21,7 @@ type BitSet struct {
 
 // NewBitSet constructor for BitSet with an array of m bits
 func NewBitSet(m uint) *BitSet {
-	return &BitSet{bs: bitset.New(m), hasher: bloomfilter.SHA1} //this is the only edit from me
+	return &BitSet{bs: bitset.New(m), hasher: bloomfilter.SHA1} //this edit from Ari
 }
 
 // Add element to bitset
@@ -59,6 +59,9 @@ func (s *Set) ToBitset() *BitSet{
 	}
 	return b
 }
+
+
+//following section by Ari:
 
 type SafeBitSet struct {
 	bs *BitSet
