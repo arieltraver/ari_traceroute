@@ -5,8 +5,19 @@ import (
 	"errors"
 	"log"
 	"time"
-	//"github.com/arieltraver/ari_traceroute/set"
+	"github.com/arieltraver/ari_traceroute/set"
 )
+
+type ResultArgs struct {
+	NewGSS *set.Set
+	News *set.Set
+	Id string
+	Index int
+}
+
+type ResultReply struct {
+	Ok bool
+}
 
 type IpArgs struct {
 	ProbeId string
@@ -14,6 +25,7 @@ type IpArgs struct {
 
 type IpReply struct {
 	Ips []string
+	Index int
 }
 
 
@@ -38,7 +50,7 @@ func dialLeader(address string) (*rpc.Client, error) {
 	return client, nil
 }
 
-func getIpRange(leader *rpc.Client) {
+func getIPRange(leader *rpc.Client) int {
 	arguments := IpArgs {
 		ProbeId:"test",
 	}
@@ -51,18 +63,40 @@ func getIpRange(leader *rpc.Client) {
 	for _, ip := range(reply.Ips) {
 		fmt.Println(ip)
 	}
+	return reply.Index
 }
 
-func testGet() {
+func sendIPRange(leader *rpc.Client, index int) {
+	newNodes := set.NewSet()
+	newGSS := set.NewSet()
+	newNodes.Add("node1")
+	newNodes.Add("node2")
+	newGSS.Add("example1")
+	newGSS.Add("example2")
+	arguments := ResultArgs{NewGSS:newGSS, News:newNodes, Id:"test", Index:index}
+	reply := ResultReply{}
+	err := leader.Call("Leader.TransferResults", arguments, &reply)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if reply.Ok {
+		fmt.Println("Transfer success")
+	}
+}
+
+func testAll() {
 	address := "localhost:4000"
 	leader, err := dialLeader(address)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("connected to:", address)
-	getIpRange(leader)
+
+	index := getIPRange(leader)
+	sendIPRange(leader, index)
+
 }
 
 func main() {
-	testGet()
+	testAll()
 }

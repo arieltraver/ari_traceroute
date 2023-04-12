@@ -52,6 +52,7 @@ type IpArgs struct {
 
 type IpReply struct {
 	Ips []string
+	Index int
 }
 
 
@@ -99,7 +100,7 @@ func findNewRange(id string) ([]string, int, error) {
 
 //accepts results of a trace from a node.
 func (*Leader) TransferResults(args ResultArgs, reply *ResultReply) error {
-
+	
 	thisRange := ipTable[args.Index] //look in the table for the ip range
 	thisRange.lock.Lock()
 	defer thisRange.lock.Unlock()
@@ -124,8 +125,9 @@ func (*Leader) GetIPs(args IpArgs, reply *IpReply) error {
 	ips, index, _ := findNewRange(args.ProbeId)
 	//TODO error handling
 	reply.Ips = ips //node gets this
-	fmt.Println(index)
-	//go waitOnProbe(args.probeId, index) //wait for probe to either time out, or finish.
+	reply.Index = index
+	fmt.Println("index selected:", index, "for", args.ProbeId)
+	go waitOnProbe(args.ProbeId, index) //wait for probe to either time out, or finish.
 	return nil
 }
 
@@ -142,6 +144,7 @@ func waitOnProbe(probeId string, index int) error {
 	}
 }
 
+//set up http server
 func connect(port string) {
 	api := new(Leader)
 	err := rpc.Register(api)
@@ -170,6 +173,7 @@ func test() {
 	ipTable = []*ipRange{ipRange1, ipRange2} //add ips to global data structure
 	seen := make(map[string]*set.IntSet)
 	seenRanges = &seenMap{rangesSeenBy:seen} //TODO make this readable
+	unlockPlease = make([]chan bool, len(ipTable))
 
 
 	go connect("localhost:4000")
