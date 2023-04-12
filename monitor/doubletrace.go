@@ -14,6 +14,7 @@ import (
 	"net/http"
 )
 
+const BITSETSIZE uint = 134191
 const DEFAULT_PORT int = 33434
 const DEFAULT_MAX_HOPS = 64
 const DEFAULT_FIRST_HOP = 1
@@ -24,7 +25,7 @@ const FLOOR = 6
 const CEILING = 12
 
 var ipRange []string
-var GSS *set.SafeSet
+var GSS *set.SafeBitSet
 var LSS *set.SafeSet
 var newGSS *set.SafeSet
 var newNodes *set.SafeSet
@@ -51,7 +52,7 @@ type ResultReply struct {
 func (*Monitor) GetResults(args ResultArgs, reply *ResultReply) error {
 	reply.News = newNodes.Set()
 	reply.NewGSS = newGSS.Set() //send back the new additions only, saves space
-	GSS.Wipe()
+	GSS.Wipe(BITSETSIZE)
 	newGSS.Wipe()
 	newNodes.Wipe()
 	//LSS is never wiped because it's useful to this probe.

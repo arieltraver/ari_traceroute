@@ -11,9 +11,9 @@ import (
 	"fmt"
 )
 
-var BITSETSIZE uint = 134191 //size of bitset acceptable for transfer over network
-var MONITORS int = 5 //number of chunks to divide file into
-var CHUNKS int = 10
+const BITSETSIZE uint = 134191 //size of bitset acceptable for transfer over network
+const MONITORS int = 5 //number of chunks to divide file into
+const CHUNKS int = 10
 var allIPs *set.SafeSet
 var unlockPlease []chan bool
 var ipTable []*ipRange 

@@ -85,3 +85,8 @@ func (sbs *SafeBitSet) Union(that interface{}) (float64, error) {
 	return sbs.bits.getCount(), nil
 }
 
+func (sbs *SafeBitSet) Wipe(newsize uint) {
+	sbs.lock.Lock()
+	defer sbs.lock.Unlock()
+	sbs.bits = NewBitSet(newsize)
+}
