@@ -13,7 +13,7 @@ import (
 
 var MONITORS int = 5 //number of chunks to divide file into
 var CHUNKS int = 10
-var allIPS *set.SafeSet
+var allIPs *set.SafeSet
 var unlockPlease []chan bool
 var ipTable []*ipRange 
 var seenRanges *seenMap //keeps track of IPs and which has seen what
@@ -114,10 +114,11 @@ func (*Leader) TransferResults(args ResultArgs, reply *ResultReply) error {
 	thisRange.currentProbe = "" //no id associated here anymore
 
 	thisRange.stops.UnionWith(args.NewGSS) //register new (hop, dest) pairs to this range of IPs
-	allIPS.UnionWith(args.News) //register all new, never-before-seen nodes
+	allIPs.UnionWith(args.News) //register all new, never-before-seen nodes
 	//TODO register new edges in some kind of graph data structure
 
 	unlockPlease[args.Index] <- true //request to unlock this set, a routine is listening.
+	reply.Ok = true
 	return nil
 }
 
@@ -136,6 +137,7 @@ func waitOnProbe(probeId string, index int) error {
 	for {
 		select {
 		case <- unlockPlease[index]: //second http request occured, result stored
+			fmt.Println("transfer worked")
 			return nil
 		case <- probeTimer.C:
 			log.Println("probe took too long")
@@ -173,7 +175,11 @@ func test() {
 	ipTable = []*ipRange{ipRange1, ipRange2} //add ips to global data structure
 	seen := make(map[string]*set.IntSet)
 	seenRanges = &seenMap{rangesSeenBy:seen} //TODO make this readable
+	allIPs = set.NewSafeSet()
 	unlockPlease = make([]chan bool, len(ipTable))
+	for i, _ := range(unlockPlease) {
+		unlockPlease[i] = make(chan bool, 1)
+	}
 
 
 	go connect("localhost:4000")

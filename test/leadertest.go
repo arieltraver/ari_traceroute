@@ -59,7 +59,6 @@ func getIPRange(leader *rpc.Client) int {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("no error")
 	for _, ip := range(reply.Ips) {
 		fmt.Println(ip)
 	}
