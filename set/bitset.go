@@ -69,6 +69,6 @@ type SafeBitSet struct {
 }
 
 func NewSafeBitSet(m uint) *SafeBitSet {
-	bitst := &SafeBitSet{bs:NewBitSet(m)}
+	bitst := &SafeBitSet{bs:NewBitSet(m), lock:sync.Mutex{}}
 	return bitst
 }
