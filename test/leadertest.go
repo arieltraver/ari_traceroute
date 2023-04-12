@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 	"github.com/arieltraver/ari_traceroute/set"
+	"os"
 )
 
 type ResultArgs struct {
@@ -50,9 +51,12 @@ func dialLeader(address string) (*rpc.Client, error) {
 	return client, nil
 }
 
-func getIPRange(leader *rpc.Client) int {
+//selects a range of IP addresses for a monitor to probe.
+//sends this (currently in the form of a string array, will compress) to the probe
+//TODO: also send the stop set associated with that range to the probe
+func getIPRange(leader *rpc.Client, id string) int {
 	arguments := IpArgs {
-		ProbeId:"test",
+		ProbeId:id,
 	}
 	reply := IpReply{}
 	err := leader.Call("Leader.GetIPs", arguments, &reply)
@@ -65,14 +69,14 @@ func getIPRange(leader *rpc.Client) int {
 	return reply.Index
 }
 
-func sendIPRange(leader *rpc.Client, index int) {
+func sendIPRange(leader *rpc.Client, index int, id string) {
 	newNodes := set.NewSet()
 	newGSS := set.NewSet()
-	newNodes.Add("node1")
-	newNodes.Add("node2")
-	newGSS.Add("example1")
-	newGSS.Add("example2")
-	arguments := ResultArgs{NewGSS:newGSS, News:newNodes, Id:"test", Index:index}
+	newNodes.Add("node1_" + id)
+	newNodes.Add("node2_" + id)
+	newGSS.Add("example1_" + id)
+	newGSS.Add("example2_" + id)
+	arguments := ResultArgs{NewGSS:newGSS, News:newNodes, Id:id, Index:index}
 	reply := ResultReply{}
 	err := leader.Call("Leader.TransferResults", arguments, &reply)
 	if err != nil {
@@ -83,7 +87,7 @@ func sendIPRange(leader *rpc.Client, index int) {
 	}
 }
 
-func testAll() {
+func testAll(id string) {
 	address := "localhost:4000"
 	leader, err := dialLeader(address)
 	if err != nil {
@@ -91,12 +95,16 @@ func testAll() {
 	}
 	fmt.Println("connected to:", address)
 
-	index := getIPRange(leader)
-	//time.Sleep(60 * time.Second) //turn this on to see if range is freed successfully
-	sendIPRange(leader, index)
+	index := getIPRange(leader, id)
+	time.Sleep(10 * time.Second) //turn this on to see if range is freed successfully
+	sendIPRange(leader, index, id)
 
 }
 
 func main() {
-	testAll()
+	if len(os.Args) < 1 {
+		fmt.Println("usage: go run leadertest.go {id}")
+	}
+	id := os.Args[1]
+	testAll(id)
 }
