@@ -64,11 +64,24 @@ func (s *Set) ToBitset() *BitSet{
 //following section by Ari:
 
 type SafeBitSet struct {
-	bs *BitSet
+	bits *BitSet
 	lock sync.Mutex
 }
 
 func NewSafeBitSet(m uint) *SafeBitSet {
-	bitst := &SafeBitSet{bs:NewBitSet(m), lock:sync.Mutex{}}
+	bitst := &SafeBitSet{bits:NewBitSet(m), lock:sync.Mutex{}}
 	return bitst
 }
+
+// Union of safe bitset and regular bitset
+func (sbs *SafeBitSet) Union(that interface{}) (float64, error) {
+	sbs.lock.Lock()
+	defer sbs.lock.Unlock()
+	other, ok := that.(*BitSet)
+	if !ok {
+		return sbs.bits.getCount(), bloomfilter.ErrImpossibleToTreat
+	}
+	sbs.bits.Union(other)
+	return sbs.bits.getCount(), nil
+}
+

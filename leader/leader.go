@@ -11,6 +11,7 @@ import (
 	"fmt"
 )
 
+var BITSETSIZE uint = 134191 //size of bitset acceptable for transfer over network
 var MONITORS int = 5 //number of chunks to divide file into
 var CHUNKS int = 10
 var allIPs *set.SafeSet
@@ -22,7 +23,7 @@ var seenRanges *seenMap //keeps track of IPs and which has seen what
 type ipRange struct {
 	ips []string
 	currentProbe  string
-	stops *set.SafeSet
+	stops *set.BitSet
 	lock sync.Mutex
 }
 
@@ -36,7 +37,7 @@ func (i *ipRange) Size() int {
 type Leader int
 
 type ResultArgs struct {
-	NewGSS *set.Set
+	NewGSS *set.BitSet
 	News *set.Set
 	Id string
 	Index int
@@ -116,14 +117,13 @@ func (*Leader) TransferResults(args ResultArgs, reply *ResultReply) error {
 	}
 	thisRange.currentProbe = "" //no id associated here anymore
 
-	thisRange.stops.UnionWith(args.NewGSS) //register new (hop, dest) pairs to this range of IPs
+	thisRange.stops.Union(args.NewGSS) //register new (hop, dest) pairs to this range of IPs
 	allIPs.UnionWith(args.News) //register all new, never-before-seen nodes
 	seenRanges.lock.Lock()
 	defer seenRanges.lock.Unlock()
 	seenRanges.rangesSeenBy[args.Id].Remove(args.Index) //done w this range!
 
 	//TODO register new edges in some kind of graph data structure
-	fmt.Println(thisRange.stops.ToCSV()) //TODO remove this is test
 
 	unlockPlease[args.Index] <- true //request to unlock this set, a routine is listening.
 	reply.Ok = true
@@ -182,14 +182,14 @@ func test() {
 		"129.186.120.3", //bugguide.net
 		"172.67.199.120", //buglife.org.uk
 	}
-	ipRange1 := &ipRange{ips:ips1[:], stops:set.NewSafeSet(), currentProbe:""}
+	ipRange1 := &ipRange{ips:ips1[:], stops:set.NewBitSet(BITSETSIZE), currentProbe:""}
 
 	ips2 := []string {
 		"13.35.83.221", //code.org
 		"104.18.8.221", //codeacademy.com
 		"76.223.115.82", //w3schools.com
 	}
-	ipRange2 := &ipRange{ips:ips2[:], stops:set.NewSafeSet(), currentProbe:""}
+	ipRange2 := &ipRange{ips:ips2[:], stops:set.NewBitSet(BITSETSIZE), currentProbe:""}
 	ipTable = []*ipRange{ipRange1, ipRange2} //add ips to global data structure
 	seen := make(map[string]*set.IntSet)
 	seenRanges = &seenMap{rangesSeenBy:seen} //TODO make this readable

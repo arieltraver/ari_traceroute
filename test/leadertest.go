@@ -9,8 +9,10 @@ import (
 	"os"
 )
 
+var BITSETSIZE uint = 134191
+
 type ResultArgs struct {
-	NewGSS *set.Set
+	NewGSS *set.BitSet
 	News *set.Set
 	Id string
 	Index int
@@ -71,11 +73,11 @@ func getIPRange(leader *rpc.Client, id string) int {
 
 func sendIPRange(leader *rpc.Client, index int, id string) {
 	newNodes := set.NewSet()
-	newGSS := set.NewSet()
+	newGSS := set.NewBitSet(BITSETSIZE)
 	newNodes.Add("node1_" + id)
 	newNodes.Add("node2_" + id)
-	newGSS.Add("example1_" + id)
-	newGSS.Add("example2_" + id)
+	newGSS.Add([]byte("example1_" + id))
+	newGSS.Add([]byte("example2_" + id))
 	arguments := ResultArgs{NewGSS:newGSS, News:newNodes, Id:id, Index:index}
 	reply := ResultReply{}
 	err := leader.Call("Leader.TransferResults", arguments, &reply)
