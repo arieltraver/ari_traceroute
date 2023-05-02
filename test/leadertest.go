@@ -100,11 +100,10 @@ func testAll(id string) {
 	index := getIPRange(leader, id)
 	time.Sleep(10 * time.Second) //turn this on to see if range is freed successfully
 	sendIPRange(leader, index, id)
-
 }
 
 func main() {
-	if len(os.Args) < 1 {
+	if len(os.Args) <= 1 {
 		fmt.Println("usage: go run leadertest.go {id}")
 	}
 	id := os.Args[1]

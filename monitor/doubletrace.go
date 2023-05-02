@@ -27,7 +27,6 @@ const CEILING = 12
 var ipRange []string
 var GSS *set.SafeBitSet
 var LSS *set.SafeSet
-var newGSS *set.SafeSet
 var newNodes *set.SafeSet
 
 type Monitor int
@@ -51,9 +50,7 @@ type ResultReply struct {
 //invoked by leader on this node. sends leader the results of probing
 func (*Monitor) GetResults(args ResultArgs, reply *ResultReply) error {
 	reply.News = newNodes.Set()
-	reply.NewGSS = newGSS.Set() //send back the new additions only, saves space
 	GSS.Wipe(BITSETSIZE)
-	newGSS.Wipe()
 	newNodes.Wipe()
 	//LSS is never wiped because it's useful to this probe.
 	return nil 
@@ -363,15 +360,14 @@ func probeForward(socketAddr [4]byte, dest string, options *TracerouteOptions, c
 
 			// modification added here to stop if it hits node in GSS or LSS
 			if ttl >= options.MaxHops() || currAddr == destAddr || GSS.Contains(hopDestString) {
-				if GSS.Contains(hopDestString) {
+				if GSS.CheckString(hopDestString) {
 					fmt.Println("found seen node", hopDestString )
 				}
 				closeNotify(c)
 				return result, nil
 			}
 			result.Hops = append(result.Hops, hop)
-			newGSS.Add(hopDestString) //smaller set for transmission across network
-			GSS.Add(hopDestString) //add to global stop set
+			GSS.AddString(hopDestString) //add to global stop set
 		} else {
 			retry += 1
 			if retry > options.Retries() {
@@ -465,7 +461,7 @@ func probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop, options *Tr
 			notify(hop, c)
 
 			result.Hops = append(result.Hops, hop)
-			GSS.Add(addressString(hopAddr) +"-"+ source) //modification: add to GSS while probing back
+			GSS.AddString(addressString(hopAddr) +"-"+ source) //modification: add to GSS while probing back
 			LSS.Add(addressString(hopAddr) +"-" + source) //add to LSS while probing back
 
 			currentHop--
@@ -489,9 +485,8 @@ func probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop, options *Tr
 
 
 func testJustProbes(addr string) {
-	GSS = set.NewSafeSet()
+	GSS = set.NewSafeBitSet(BITSETSIZE)
 	LSS = set.NewSafeSet()
-	newGSS = set.NewSafeSet()
 	newNodes = set.NewSafeSet()
 	options := &TracerouteOptions{}
 	options.SetMaxHopsRandom(FLOOR, CEILING)
@@ -526,15 +521,13 @@ func testJustProbes(addr string) {
 }
 
 func testConcurrent() {
-	GSS = set.NewSafeSet()
+	GSS = set.NewSafeBitSet()
 	LSS = set.NewSafeSet()
 	newNodes = set.NewSafeSet()
-	newGSS = set.NewSafeSet()
 	ips := []string{"192.124.249.164", "107.21.104.61", "104.26.11.229", "108.139.7.178"}
 	ipRange = ips[:]
 	sendProbes()
 	fmt.Println("-------GSS-------")
-	fmt.Print(GSS.ToCSV())
 }
 
 func connect(port string) {
