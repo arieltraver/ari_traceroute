@@ -14,7 +14,7 @@ import (
 	"net/http"
 )
 
-const BITSETSIZE int = 32
+const BITSETSIZE uint = 32
 const DEFAULT_PORT int = 33434
 const DEFAULT_MAX_HOPS = 64
 const DEFAULT_FIRST_HOP = 1

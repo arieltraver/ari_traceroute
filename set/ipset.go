@@ -45,9 +45,11 @@ func uint32ToBytes(n uint32) []byte{
 func uint32ToString(n uint32) string {
 	bytez := uint32ToBytes(n)
 	s := &strings.Builder{}
-	for _, b := range(bytez) {
+	for _, b := range(bytez[:3]) {
 		s.WriteString(strconv.Itoa(int(b)))
+		s.WriteString(".")
 	}
+	s.WriteString(strconv.Itoa(int(bytez[3])))
 	return s.String()
 }
 
@@ -160,6 +162,7 @@ func (sBs *SafeIPSet) ToCSV() string {
 	for i, val := range(sBs.IPS.BS) {
 		if val {
 			s.WriteString(uint32ToString(uint32(i)))
+			s.WriteString(",")
 		}
 	}
 	return s.String()

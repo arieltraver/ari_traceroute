@@ -23,7 +23,7 @@ var seenRanges *seenMap //keeps track of IPs and which has seen what
 type ipRange struct {
 	ips []string
 	currentProbe  string
-	stops *set.BitSet
+	stops *set.IPSet
 	lock sync.Mutex
 }
 
@@ -37,7 +37,7 @@ func (i *ipRange) Size() int {
 type Leader int
 
 type ResultArgs struct {
-	NewGSS *set.BitSet
+	NewGSS *set.IPSet
 	News *set.Set
 	Id string
 	Index int
@@ -182,14 +182,14 @@ func test() {
 		"129.186.120.3", //bugguide.net
 		"172.67.199.120", //buglife.org.uk
 	}
-	ipRange1 := &ipRange{ips:ips1[:], stops:set.NewBitSet(BITSETSIZE), currentProbe:""}
+	ipRange1 := &ipRange{ips:ips1[:], stops:set.NewIPSet(BITSETSIZE), currentProbe:""}
 
 	ips2 := []string {
 		"13.35.83.221", //code.org
 		"104.18.8.221", //codeacademy.com
 		"76.223.115.82", //w3schools.com
 	}
-	ipRange2 := &ipRange{ips:ips2[:], stops:set.NewBitSet(BITSETSIZE), currentProbe:""}
+	ipRange2 := &ipRange{ips:ips2[:], stops:set.NewIPSet(BITSETSIZE), currentProbe:""}
 	ipTable = []*ipRange{ipRange1, ipRange2} //add ips to global data structure
 	seen := make(map[string]*set.IntSet)
 	seenRanges = &seenMap{rangesSeenBy:seen} //TODO make this readable
