@@ -21,24 +21,27 @@ func bytesToUint32(byts []byte) uint32 {
 	if(len(byts)) == 1 {
 		return uint32(byts[0])
 	}
-	var i uint32 = 0;
-	for byt := range(byts[:len(byts)-1]) {
-		i += uint32(byt)
-		i = i << 8
+	var n uint32 = 0;
+	for i := len(byts)-1; i>0; i-- {
+		n += uint32(byts[i])
+		n = n << 8
 	}
-	i+= uint32(byts[len(byts)-1])
-	return i
+	n+= uint32(byts[0])
+	return n
 }
 
 func uint32ToBytes(n uint32) []byte{
+	fmt.Println("n is", n)
 	bytez := make([]byte, 4)
 	mask := uint32(255)
-	for i := 3; i >= 0; i-- {
+	for i := 0; i < 4; i++ {
 		n2 := n & mask //last 8 bits
-		bytez[i] = byte(n2);
+		fmt.Println("n2 is", n2)
+		bytez[i] = uint8(n2);
 		n = n >> 8 //shift it down
-		fmt.Println(bytez[i])
+		fmt.Println("n is", n, "after shift")
 	}
+	fmt.Println(bytez)
 	return bytez
 }
 
@@ -66,6 +69,7 @@ func NewIPv4Set() *IPSet {
 // Add IP to IPSet based on itself
 func (BS *IPSet) Add(elem []byte) {
 	var i = bytesToUint32(elem)
+	fmt.Println("index is",i);
 	BS.BS[i] = true
 }
 
@@ -155,15 +159,19 @@ func (sBs *SafeIPSet) CheckString(s string) bool {
 	return sBs.IPS.Check([]byte(s))
 }
 
-func (sBs *SafeIPSet) ToCSV() string {
+func (IPS *IPSet) ToCSV() string {
 	s := &strings.Builder{}
-	sBs.lock.Lock()
-	defer sBs.lock.Unlock()
-	for i, val := range(sBs.IPS.BS) {
+	for i, val := range(IPS.BS) {
 		if val {
 			s.WriteString(uint32ToString(uint32(i)))
 			s.WriteString(",")
 		}
 	}
 	return s.String()
+}
+
+func (SPS *SafeIPSet) ToCSV() string {
+	SPS.lock.Lock();
+	defer SPS.lock.Unlock();
+	return SPS.IPS.ToCSV();
 }

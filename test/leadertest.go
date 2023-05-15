@@ -76,8 +76,9 @@ func sendIPRange(leader *rpc.Client, index int, id string) {
 	newGSS := set.NewIPSet(BITSETSIZE)
 	newNodes.Add("node1_" + id)
 	newNodes.Add("node2_" + id)
-	newGSS.Add([]byte{byte(123), byte(22), byte(4), byte(1)})
-	newGSS.Add([]byte{byte(123), byte(22), byte(4), byte(1)})
+	newGSS.Add([]byte{byte(123), byte(22), byte(4), byte(200)})
+	newGSS.Add([]byte{byte(1), byte(220), byte(43), byte(10)})
+	fmt.Println(newGSS.ToCSV())
 	arguments := ResultArgs{NewGSS:newGSS, News:newNodes, Id:id, Index:index}
 	reply := ResultReply{}
 	err := leader.Call("Leader.TransferResults", arguments, &reply)
