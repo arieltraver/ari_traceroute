@@ -514,7 +514,7 @@ func testJustProbes(addr string) {
 	}
 
 	fmt.Println("-------GSS-------")
-	fmt.Print(GSS.ToCSV())
+	fmt.Print(GSS.ToCSV()+"\n")
 	fmt.Println("-------LSS-------")
 	fmt.Print(LSS.ToCSV())
 
@@ -542,6 +542,6 @@ func connect(port string) {
 }
 
 func main(){
-	//testJustProbes("bugsincyberspace.com")
+	testJustProbes("bugsincyberspace.com")
 	connect("3000")
 }
