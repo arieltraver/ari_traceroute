@@ -359,7 +359,7 @@ func probeForward(socketAddr [4]byte, dest string, options *TracerouteOptions, c
 			hopDestString := hop.AddressString() + "-" + addressString(destAddr)
 
 			// modification added here to stop if it hits node in GSS or LSS
-			if ttl >= options.MaxHops() || currAddr == destAddr || GSS.Contains(hopDestString) {
+			if ttl >= options.MaxHops() || currAddr == destAddr || GSS.CheckString(hopDestString) {
 				if GSS.CheckString(hopDestString) {
 					fmt.Println("found seen node", hopDestString )
 				}
@@ -521,7 +521,7 @@ func testJustProbes(addr string) {
 }
 
 func testConcurrent() {
-	GSS = set.NewSafeBitSet()
+	GSS = set.NewSafeBitSet(BITSETSIZE)
 	LSS = set.NewSafeSet()
 	newNodes = set.NewSafeSet()
 	ips := []string{"192.124.249.164", "107.21.104.61", "104.26.11.229", "108.139.7.178"}
