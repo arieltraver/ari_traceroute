@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-var BITSETSIZE uint = 134191
+var BITSETSIZE uint = 32
 
 type ResultArgs struct {
 	NewGSS *set.IPSet
