@@ -14,7 +14,7 @@ import (
 	"net/http"
 )
 
-const BITSETSIZE uint = 134191
+const BITSETSIZE int = 32
 const DEFAULT_PORT int = 33434
 const DEFAULT_MAX_HOPS = 64
 const DEFAULT_FIRST_HOP = 1
@@ -25,7 +25,7 @@ const FLOOR = 6
 const CEILING = 12
 
 var ipRange []string
-var GSS *set.SafeBitSet
+var GSS *set.SafeIPSet
 var LSS *set.SafeSet
 var newNodes *set.SafeSet
 
@@ -485,7 +485,7 @@ func probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop, options *Tr
 
 
 func testJustProbes(addr string) {
-	GSS = set.NewSafeBitSet(BITSETSIZE)
+	GSS = set.NewSafeIPSet(BITSETSIZE)
 	LSS = set.NewSafeSet()
 	newNodes = set.NewSafeSet()
 	options := &TracerouteOptions{}
@@ -521,7 +521,7 @@ func testJustProbes(addr string) {
 }
 
 func testConcurrent() {
-	GSS = set.NewSafeBitSet(BITSETSIZE)
+	GSS = set.NewSafeIPSet(BITSETSIZE)
 	LSS = set.NewSafeSet()
 	newNodes = set.NewSafeSet()
 	ips := []string{"192.124.249.164", "107.21.104.61", "104.26.11.229", "108.139.7.178"}
