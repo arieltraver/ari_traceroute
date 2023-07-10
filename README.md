@@ -23,8 +23,7 @@ Doubletree
     * This fits within the requirements of the Doubletree paper, and we implement this using our bit set data structure.
 * [a blog post](https://medium.com/@val_deleplace/7-ways-to-implement-a-bit-set-in-go-91650229b386) about different strategies for implementing bitsets in go. one structure consists of a struct containing an array of uint64s (since Go does not allow for raw binary operations on arbitrary data types)
     * Taking the union of two such bitsets would simply require an OR operation on each of the corresponding slices
-    * Since our bloom filter requires ~14 kb, 
-
+    * Since our bloom filter requires ~14 kb, this would give us an array of length 220. This is quite a manageable array.
 * The size of a bitset encompassing all of IPV4 space is 2^32 bits or roughly half a gigabyte, where each IP address hashes directly to itself. This is large but easy for a server to maintain, if it needs to register all IPs it has ever seen, etc.
 
 * set.go based on this tutorial: https://www.davidkaya.com/sets-in-golang/
