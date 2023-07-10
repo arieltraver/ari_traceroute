@@ -1,5 +1,9 @@
 package main
 
+//IPSet: a bitset in which an IP address (or a list of bytes) maps directly to an array index
+//This gives us a set of size 2^(32/(2^n)) where n is the number of IP address chunsk you leave out
+//For example, a monitor could be given [111 200 301] and it will map all IPS with those first 3 parts, "111.200.300.(...)"
+
 import (
 	"net/rpc"
 	"net/http"
@@ -11,33 +15,33 @@ import (
 	"fmt"
 )
 
-const BITSETSIZE uint = 32 //2^32 bits --> one bit for each possible IP.
+const BITSETSIZE uint = 16 //2^16 bits --> one bit for each possible IP, sliced by first two bytes.
 const MONITORS int = 5 //number of chunks to divide file into
 const CHUNKS int = 10
 var allIPs *set.SafeSet
 var unlockPlease []chan bool
-var ipTable []*ipRange 
+var ipTable []*ipRange //here is where the global stop sets are stored
 var seenRanges *seenMap //keeps track of IPs and which has seen what
 
 //a pair: who's using an IP range (locked for concurrency), and also that range (locked)
 type ipRange struct {
-	ips []string
+	prefixes [][]byte //must be the same length as stops, 1-1 correspondence.
 	currentProbe  string
-	stops *set.IPSet
+	stops []*set.BitSet
 	lock sync.Mutex
 }
 
 func (i *ipRange) Size() int {
 	i.lock.Lock()
 	defer i.lock.Unlock()
-	l := len(i.ips)
+	l := len(i.stops)
 	return l
 }
 
 type Leader int
 
 type ResultArgs struct {
-	NewGSS *set.IPSet
+	NewGSS *set.BitSet
 	News *set.Set
 	Id string
 	Index int
@@ -64,8 +68,8 @@ type seenMap struct {
 	lock sync.Mutex
 }
 
-//given the id of a probe, finds an unseen range for it.
-func findNewRange(id string) ([]string, int, error) {
+//given the id of a probe, finds an unseen range and returns its prefixes and stop set.
+func findNewRange(id string) ([][]byte, []*set.BitSet, int, error) {
 	seenRanges.lock.Lock()
 	seenRanges.lock.Unlock() //TODO: lock the range but not the whole table.
 	//TODO: empty set check. return error "{id} has seen all ip ranges"
@@ -89,14 +93,15 @@ func findNewRange(id string) ([]string, int, error) {
 		thisRange.lock.Lock()
 		if thisRange.currentProbe == "" { //no current owner
 			thisRange.currentProbe = id //new owner
-			freeIps := thisRange.ips //copy range of IP addresses from table
+			stopSet := thisRange.stops //copy range of IP addresses from table
+			prefixesToProbe := thisRange.prefixes;
 			thisRange.lock.Unlock()
-			return freeIps, index, nil
+			return prefixesToProbe, stopSet, index, nil
 		}
 		thisRange.lock.Unlock()
 	}
 	//everything in use
-	return nil, -1, errors.New("no free IPs")
+	return nil, nil, -1, errors.New("no free IPs")
 }
 
 //accepts results of a trace from a node.
@@ -177,20 +182,14 @@ func connect(port string) {
 }
 
 func test() {
-	ips1 := []string {
-		"192.124.249.164", //bugsincyberspace.com
-		"129.186.120.3", //bugguide.net
-		"172.67.199.120", //buglife.org.uk
+	stopz := make([]*set.IPSet, 65535) //255: 16 bits. ranges specified per byte
+	for i, _ := range(stopz) {
+		stopz[i] = set.NewIPSet(BITSETSIZE)
+		/*so what we are doing here
+		is adding this special data structure
+		(a bitset with index directly correlating to IP address)
+		*/
 	}
-	ipRange1 := &ipRange{ips:ips1[:], stops:set.NewIPSet(BITSETSIZE), currentProbe:""}
-
-	ips2 := []string {
-		"13.35.83.221", //code.org
-		"104.18.8.221", //codeacademy.com
-		"76.223.115.82", //w3schools.com
-	}
-	ipRange2 := &ipRange{ips:ips2[:], stops:set.NewIPSet(BITSETSIZE), currentProbe:""}
-	ipTable = []*ipRange{ipRange1, ipRange2} //add ips to global data structure
 	seen := make(map[string]*set.IntSet)
 	seenRanges = &seenMap{rangesSeenBy:seen} //TODO make this readable
 	allIPs = set.NewSafeSet()
@@ -205,6 +204,11 @@ func test() {
 }
 
 func main() {
+	stopz := make([]*set.SafeIPSet, 255) //limit to a range.
+	for i, _ := range(stopz) {
+		stopz[i] = set.NewSafeIPSet(BITSETSIZE)
+	}
+
 	test();
 	time.Sleep(600 * time.Second)
 }
