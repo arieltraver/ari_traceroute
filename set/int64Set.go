@@ -1,6 +1,6 @@
 
 package set
-
+/**
 import (
 	"sync"
 	"errors"
@@ -21,7 +21,7 @@ func getBitFromAddr(addr uint64, l uint64) (uint64, uint64) {
 	num = num << offset //get a bit in the right location, rest is 0s
 	return chunk, num
 }
-/*here, the address (addr) can be the result of a hash function*/
+//here, the address (addr) can be the result of a hash function
 func (uSet *Uint64Set) insertAtAddr(addr uint64) {
 	chunk, num := getBitFromAddr(addr, uSet.l)
 	uSet.chunks[chunk] |= num //bitwise OR
@@ -31,3 +31,4 @@ func (uSet *Uint64Set) checkAddr(addr uint64) bool {
 	chunk, num := getBitFromAddr(addr, uSet.l)
 	return ((uSet.chunks[chunk] ^ num) == 0)
 }
+**/

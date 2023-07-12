@@ -6,7 +6,7 @@
 //
 // It aggregates a hashfunction and implements the Add, Check and Union methods.
 package set
-
+/**
 import (
 	"github.com/krakendio/bloomfilter/v2"
 	"github.com/tmthrgd/go-bitset"
@@ -106,3 +106,4 @@ func (sBs *SafeBitSet) CheckString(s string) bool {
 func (sBs *SafeBitSet) ToCSV() string {
 	return "...implement toCSV"
 }
+**/

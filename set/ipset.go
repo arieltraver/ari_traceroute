@@ -4,6 +4,7 @@
 
 package set
 
+/**
 import (
 	"sync"
 	"errors"
@@ -175,3 +176,4 @@ func (SPS *SafeIPSet) ToCSV() string {
 	defer SPS.lock.Unlock();
 	return SPS.IPS.ToCSV();
 }
+**/
