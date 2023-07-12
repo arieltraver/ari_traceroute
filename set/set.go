@@ -263,7 +263,7 @@ func TestNoRoutine() {
 	fmt.Println("-- should be: ab, cool or cool, ab")
 }
 
-func testRoutines() {
+func TestRoutines() {
 	//Does a bunch of add and delete operations.
 	//At the end we should have numbers 0 to 50 in the set.
 	ss := NewSafeStringSet()

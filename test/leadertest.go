@@ -111,5 +111,6 @@ func main() {
 	id := os.Args[1]
 	testAll(id)
 	**/
-	set.TestNoRoutine()
+	//set.TestNoRoutine()
+	set.TestRoutines()
 }
