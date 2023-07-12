@@ -265,7 +265,7 @@ func TestNoRoutine() {
 
 func TestRoutines() {
 	//Does a bunch of add and delete operations.
-	//At the end we should have numbers 0 to 50 in the set.
+	//To be tested with data race checker.
 	ss := NewSafeStringSet()
 	ss.Add("ABC")
 	ss.Add("DEF")
