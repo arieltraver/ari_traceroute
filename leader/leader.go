@@ -26,22 +26,22 @@ var seenRanges *seenMap //keeps track of IPs and which has seen what
 type ipRange struct {
 	prefixes [][]byte //must be the same length as stops, 1-1 correspondence.
 	currentProbe  string
-	stops *set.Set
+	stops *set.StringSet
 	lock sync.Mutex
 }
-
+/*
 func (i *ipRange) Size() int {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 	l := i.stops.
 	return l
-}
+}*/
 
 type Leader int
 
 type ResultArgs struct {
 	NewGSS *set.SafeSet
-	News *set.Set
+	News *set.StringSet
 	Id string
 	Index int
 }
@@ -55,7 +55,8 @@ type IpArgs struct {
 }
 
 type IpReply struct {
-	Ips []string
+	Ips [][]byte
+	Stops *set.StringSet
 	Index int
 }
 
@@ -68,7 +69,7 @@ type seenMap struct {
 }
 
 //given the id of a probe, finds an unseen range and returns its prefixes and stop set.
-func findNewRange(id string) ([][]byte, []*set.BitSet, int, error) {
+func findNewRange(id string) ([][]byte, *set.StringSet, int, error) {
 	seenRanges.lock.Lock()
 	seenRanges.lock.Unlock() //TODO: lock the range but not the whole table.
 	//TODO: empty set check. return error "{id} has seen all ip ranges"
@@ -120,9 +121,7 @@ func (*Leader) TransferResults(args ResultArgs, reply *ResultReply) error {
 		return errors.New("ips in use by other probe")
 	}
 	thisRange.currentProbe = "" //no id associated here anymore
-	args.NewGSS.lock.Lock()
 	thisRange.stops.UnionWith(args.NewGSS.Set()) //register new (hop, dest) pairs to this range of IPs
-	args.NewGSS.lock.
 	allIPs.UnionWith(args.News) //register all new, never-before-seen nodes
 	seenRanges.lock.Lock()
 	defer seenRanges.lock.Unlock()
@@ -136,9 +135,10 @@ func (*Leader) TransferResults(args ResultArgs, reply *ResultReply) error {
 }
 
 func (*Leader) GetIPs(args IpArgs, reply *IpReply) error {
-	ips, index, _ := findNewRange(args.ProbeId)
+	ips, stops, index, _ := findNewRange(args.ProbeId)
 	//TODO error handling
 	reply.Ips = ips //node gets this
+	reply.Stops = stops
 	reply.Index = index
 	fmt.Println("index selected:", index, "for", args.ProbeId)
 	go waitOnProbe(args.ProbeId, index) //wait for probe to either time out, or finish.
@@ -181,14 +181,17 @@ func connect(port string) {
 	log.Printf("serving rpc on port " + port)
 }
 
-func test() {
-	stopz := set.NewSafeStringSet()
-	for i, _ := range(stopz) {
-		stopz[i] = set.NewIPSet(BITSETSIZE)
+func test(numRanges int) {
+	ipTable = make([]*ipRange,numRanges)
+	for i := 0; i < numRanges; i++ {
+		b := make([][]byte, 1)
+		b[0] = []byte{byte(i), byte(i), byte(i), byte(i)}
+		stopz := set.NewStringSet()
+		ipTable[i] = &ipRange{prefixes:b, stops:stopz, currentProbe:""}
 	}
 	seen := make(map[string]*set.IntSet)
 	seenRanges = &seenMap{rangesSeenBy:seen} //TODO make this readable
-	allIPs = set.NewSafeSet()
+	allIPs = set.NewSafeStringSet()
 	unlockPlease = make([]chan bool, len(ipTable))
 	for i, _ := range(unlockPlease) {
 		unlockPlease[i] = make(chan bool, 1)
@@ -200,6 +203,4 @@ func test() {
 }
 
 func main() {
-	strset := set.NewStringSet()
-	safeStopz := set.NewSafeStringSet(strset)
 }
