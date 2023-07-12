@@ -183,13 +183,9 @@ func connect(port string) {
 }
 
 func test() {
-	stopz := make([]*set.IPSet, 65535) //255: 16 bits. ranges specified per byte
+	stopz := set.NewSafeStringSet()
 	for i, _ := range(stopz) {
 		stopz[i] = set.NewIPSet(BITSETSIZE)
-		/*so what we are doing here
-		is adding this special data structure
-		(a bitset with index directly correlating to IP address)
-		*/
 	}
 	seen := make(map[string]*set.IntSet)
 	seenRanges = &seenMap{rangesSeenBy:seen} //TODO make this readable
@@ -205,11 +201,6 @@ func test() {
 }
 
 func main() {
-	stopz := make([]*set.SafeIPSet, 255) //limit to a range.
-	for i, _ := range(stopz) {
-		stopz[i] = set.NewSafeIPSet(BITSETSIZE)
-	}
-
-	test();
-	time.Sleep(600 * time.Second)
+	strset := set.NewStringSet()
+	safeStopz := set.NewSafeStringSet(strset)
 }

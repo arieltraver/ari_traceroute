@@ -6,14 +6,14 @@ import (
 	"log"
 	"time"
 	"github.com/arieltraver/ari_traceroute/set"
-	"os"
+	//"os"
 )
 
 var BITSETSIZE uint = 32
 
 type ResultArgs struct {
-	NewGSS *set.IPSet
-	News *set.Set
+	NewGSS *set.SafeSet
+	News *set.StringSet
 	Id string
 	Index int
 }
@@ -72,8 +72,8 @@ func getIPRange(leader *rpc.Client, id string) int {
 }
 
 func sendIPRange(leader *rpc.Client, index int, id string) {
-	newNodes := set.NewSet()
-	newGSS := set.NewIPSet(BITSETSIZE)
+	newNodes := set.NewStringSet()
+	newGSS := set.NewSafeStringSet()
 	newNodes.Add("node1_" + id)
 	newNodes.Add("node2_" + id)
 	newGSS.Add([]byte{byte(123), byte(22), byte(4), byte(200)})
@@ -104,9 +104,12 @@ func testAll(id string) {
 }
 
 func main() {
+	/**
 	if len(os.Args) <= 1 {
 		fmt.Println("usage: go run leadertest.go {id}")
 	}
 	id := os.Args[1]
 	testAll(id)
+	**/
+	set.TestNoRoutine()
 }

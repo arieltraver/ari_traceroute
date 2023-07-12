@@ -4,6 +4,7 @@ import (
 	"sync"
 	"strings"
 	"strconv"
+	"fmt"
 )
 
 type Set interface {
@@ -178,6 +179,12 @@ func NewSafeStringSet() *SafeSet {
 	return ss
 }
 
+func NewSafeIntSet() *SafeSet {
+	intSet := NewIntSet()
+	ss := &SafeSet{st:intSet}
+	return ss
+}
+
 func (s *SafeSet) Add(item any) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -223,6 +230,37 @@ func (s *SafeSet) Wipe() {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.st.Wipe()
+}
+
+func TestNoRoutine() {
+	strs := NewStringSet()
+	strs.Add("ab")
+	strs.Add("cd")
+	strs.Remove("cd")
+	fmt.Println(strs.ToCSV())
+	fmt.Println("-- should be: ab")
+	ints := NewIntSet()
+	ints.Add(1)
+	ints.Add(2)
+	ints.Remove(1)
+	fmt.Println(ints.ToCSV())
+	fmt.Println("-- should be:", 2)
+	safeStrs := NewSafeStringSet()
+	safeInts := NewSafeIntSet()
+	safeStrs.Add("lame")
+	safeStrs.Add("cool")
+	safeInts.Remove("lame")
+	fmt.Println(safeStrs.ToCSV())
+	fmt.Println("-- should be: cool")
+	safeInts.Add(11)
+	safeInts.Add(22)
+	safeInts.Remove(22)
+	fmt.Println(safeInts.ToCSV())
+	fmt.Println("-- should be: 11")
+
+	safeStrs.UnionWith(strs)
+	fmt.Println(safeStrs.ToCSV())
+	fmt.Println("-- should be: ab, cool or cool, ab")
 }
 /*
 //tries every function, many concurrent adds/removes
