@@ -267,10 +267,8 @@ func TestRoutines() {
 	//Does a bunch of add and delete operations.
 	//To be tested with data race checker.
 	ss := NewSafeStringSet()
-	ss.Add("ABC")
-	ss.Add("DEF")
 	wg := &sync.WaitGroup{}
-	wg.Add(2)
+	wg.Add(3)
 	go func() {
 		defer wg.Done()
 		wg2 := &sync.WaitGroup{}
@@ -295,6 +293,13 @@ func TestRoutines() {
 		}
 		wg3.Wait()
 	}();
+	go func() {
+		defer wg.Done()
+		strSet := NewStringSet();
+		strSet.Add("WOAH NICE")
+		strSet.Add("UNION")
+		ss.UnionWith(strSet)
+	}()
 	wg.Wait()
 	fmt.Println(ss.ToCSV())
 }
