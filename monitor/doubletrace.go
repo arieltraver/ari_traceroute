@@ -302,6 +302,10 @@ func sendProbes() {
 		go probeAddr(&wg, ip)
 	}
 	wg.Wait()
+	fmt.Println("-------GSS-------")
+	fmt.Print(GSS.ToCSV()+"\n")
+	fmt.Println("-------LSS-------")
+	fmt.Print(LSS.ToCSV())
 }
 
 func probeAddr(wg *sync.WaitGroup, ip [4]byte) {
@@ -572,7 +576,6 @@ func testJustProbes(addr [4]byte) {
 	for _, hop := range(forwardResult.Hops) {
 		fmt.Println(hop.AddressString())
 	}
-	fmt.Println("-----------------")
 	backward := make(chan TracerouteHop, options.maxHops)
 	backResult, err := probeBackwards(sourceAddr, forwardResult.Hops, options, backward)
 	if err != nil {
@@ -581,11 +584,6 @@ func testJustProbes(addr [4]byte) {
 	for _, hop := range(backResult.Hops) {
 		fmt.Println(hop.AddressString())
 	}
-
-	fmt.Println("-------GSS-------")
-	fmt.Print(GSS.ToCSV()+"\n")
-	fmt.Println("-------LSS-------")
-	fmt.Print(LSS.ToCSV())
 
 }
 
@@ -601,7 +599,6 @@ func testConcurrent() {
 	}
 	ipRange = ips[:]
 	sendProbes()
-	fmt.Println("-------GSS-------")
 }
 
 /*
@@ -631,4 +628,5 @@ func test(id string) {
 func main(){
 	batterygr := [4]byte{195,201,241,126}
 	testJustProbes(batterygr)
+	testConcurrent()
 }
