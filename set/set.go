@@ -262,18 +262,39 @@ func TestNoRoutine() {
 	fmt.Println(safeStrs.ToCSV())
 	fmt.Println("-- should be: ab, cool or cool, ab")
 }
-/*
-//tries every function, many concurrent adds/removes
-func testRoutine(s1 *SafeSet, s2 *SafeSet, s3 *SafeSet, wg *sync.WaitGroup){
-	defer wg.Done()
-	for i := 0; i < 5; i++ {
-		fmt.Print(s3.ToCSV())
-		s1.Add(strconv.Itoa(i))
-		s1.Remove(strconv.Itoa(5 - i))
-		s1.UnionWith(s2)
-		s2.IntersectWith(s1)
-		s3 = SafeUnion(s1, s2) //is s3's old memory getting collected?...
-		s3.Add("test")
-	}
+
+func testRoutines() {
+	//Does a bunch of add and delete operations.
+	//At the end we should have numbers 0 to 50 in the set.
+	ss := NewSafeStringSet()
+	ss.Add("ABC")
+	ss.Add("DEF")
+	wg := &sync.WaitGroup{}
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		wg2 := &sync.WaitGroup{}
+		wg2.Add(100)
+		for i := 0; i < 100; i++ {
+			go func(num int){
+				ss.Add(strconv.Itoa(num))
+				wg2.Done()
+			}(i);
+		}
+		wg2.Wait()
+	}();
+	go func() {
+		defer wg.Done()
+		wg3 := &sync.WaitGroup{}
+		wg3.Add(100)
+		for i := 0; i < 100; i++ {
+			go func(num int){
+				ss.Remove(strconv.Itoa(num))
+				wg3.Done()
+			}(i);
+		}
+		wg3.Wait()
+	}();
+	wg.Wait()
+	fmt.Println(ss.ToCSV())
 }
-*/
