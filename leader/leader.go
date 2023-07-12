@@ -58,6 +58,7 @@ type IpReply struct {
 	Ips [][]byte
 	Stops *set.StringSet
 	Index int
+	Ok bool
 }
 
 //each id is associated with an index in the table.
@@ -135,8 +136,11 @@ func (*Leader) TransferResults(args ResultArgs, reply *ResultReply) error {
 }
 
 func (*Leader) GetIPs(args IpArgs, reply *IpReply) error {
-	ips, stops, index, _ := findNewRange(args.ProbeId)
-	//TODO error handling
+	ips, stops, index, er := findNewRange(args.ProbeId)
+	if er != nil {
+		reply.Ok = false
+		return errors.New("could not find new IP range for that node.")
+	}
 	reply.Ips = ips //node gets this
 	reply.Stops = stops
 	reply.Index = index

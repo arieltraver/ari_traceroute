@@ -15,6 +15,7 @@ import (
 	"time"
 	"github.com/arieltraver/ari_traceroute/set"
 	"net/rpc"
+	"os"
 	//"net/http"
 )
 
@@ -81,7 +82,7 @@ func dialLeader(address string) (*rpc.Client, error) {
 	return client, nil
 }
 
-func getIPRange(leader *rpc.Client, id string) int {
+func getIpRange(leader *rpc.Client, id string) (int, bool) {
 	arguments := IpArgs {
 		ProbeId:id,
 	}
@@ -90,12 +91,15 @@ func getIPRange(leader *rpc.Client, id string) int {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if !reply.Ok {
+		return -1, false
+	}
 	GSS.ChangeSetTo(reply.NewGSS)
-	return reply.Index
+	return reply.Index, true
 }
 
 /**return the results of a trace to the leader**/
-func sendIPRange(leader *rpc.Client, index int, id string) {
+func sendIPRange(leader *rpc.Client, index int, id string) bool {
 	fmt.Println(GSS.ToCSV())
 	arguments := ResultArgs{NewGSS:GSS.Set().(*set.StringSet),News:newNodes.Set().(*set.StringSet),Id:id, Index:index}
 	reply := ResultReply{}
@@ -106,6 +110,7 @@ func sendIPRange(leader *rpc.Client, index int, id string) {
 	if reply.Ok {
 		fmt.Println("Transfer success")
 	}
+	return reply.Ok
 }
 
 
@@ -612,21 +617,39 @@ func connect(port string) {
 	go http.ListenAndServe(port, nil)
 	log.Printf("serving rpc on port" + port)
 }
+*/
 
-
-func test(id string) {
+func loop(id string) {
+	//connect to the leader node.
 	leader, err := dialLeader(ADDRESS_STRING)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("connected to:", ADDRESS_STRING)
-	index := getIPRange(leader, id)
-	sendIPRange(leader, index, id)
+	//continue to request ranges until you run out.
+	for {
+		indx, ok := getIpRange(leader, id)
+		if !ok { //something happened, like perhaps we reached the last node.
+			return
+		}
+		sendProbes()
+		sendIPRange(leader, indx, id)
+	}
 }
-*/
 
-func main(){
+func main() {
+	if len(os.Args) < 2 {
+		fmt.Println("usage: sudo go run doubletrace id")
+		return
+	} else {
+		id := os.Args[1]
+		loop(id)
+	}
+}
+
+/*
+func tests(){
 	batterygr := [4]byte{195,201,241,126}
 	testJustProbes(batterygr)
 	testConcurrent()
-}
+}*/
