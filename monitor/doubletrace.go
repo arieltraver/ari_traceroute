@@ -19,7 +19,7 @@ import (
 )
 
 //change when testing on AWS etc
-const ADDRES_STRING string = "localhost:4000"
+const ADDRESS_STRING string = "localhost:4000"
 const DEFAULT_PORT int = 33434
 const DEFAULT_MAX_HOPS = 64
 const DEFAULT_FIRST_HOP = 1
