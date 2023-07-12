@@ -24,7 +24,7 @@ var seenRanges *seenMap //keeps track of IPs and which has seen what
 
 //a pair: who's using an IP range (locked for concurrency), and also that range (locked)
 type ipRange struct {
-	prefixes [][]byte //must be the same length as stops, 1-1 correspondence.
+	addresses [][4]byte //must be the same length as stops, 1-1 correspondence.
 	currentProbe  string
 	stops *set.StringSet
 	lock sync.Mutex
@@ -55,7 +55,7 @@ type IpArgs struct {
 }
 
 type IpReply struct {
-	Ips [][]byte
+	Ips [][4]byte
 	Stops *set.StringSet
 	Index int
 	Ok bool
@@ -68,8 +68,8 @@ type seenMap struct {
 	lock sync.Mutex
 }
 
-//given the id of a probe, finds an unseen range and returns its prefixes and stop set.
-func findNewRange(id string) ([][]byte, *set.StringSet, int, error) {
+//given the id of a probe, finds an unseen range and returns its ip's and stop set.
+func findNewRange(id string) ([][4]byte, *set.StringSet, int, error) {
 	seenRanges.lock.Lock()
 	seenRanges.lock.Unlock() //TODO: lock the range but not the whole table.
 	//TODO: empty set check. return error "{id} has seen all ip ranges"
@@ -94,9 +94,9 @@ func findNewRange(id string) ([][]byte, *set.StringSet, int, error) {
 		if thisRange.currentProbe == "" { //no current owner
 			thisRange.currentProbe = id //new owner
 			stopSet := thisRange.stops //copy range of IP addresses from table
-			prefixesToProbe := thisRange.prefixes;
+			addressesToProbe := thisRange.addresses;
 			thisRange.lock.Unlock()
-			return prefixesToProbe, stopSet, index, nil
+			return addressesToProbe, stopSet, index, nil
 		}
 		thisRange.lock.Unlock()
 	}
@@ -135,6 +135,7 @@ func (*Leader) TransferResults(args ResultArgs, reply *ResultReply) error {
 	return nil
 }
 
+//RPC which assigns a range of IP's to a monitor, depending on which are free.
 func (*Leader) GetIPs(args IpArgs, reply *IpReply) error {
 	ips, stops, index, er := findNewRange(args.ProbeId)
 	if er != nil {
@@ -144,27 +145,28 @@ func (*Leader) GetIPs(args IpArgs, reply *IpReply) error {
 	reply.Ips = ips //node gets this
 	reply.Stops = stops
 	reply.Index = index
+	reply.Ok = true
 	fmt.Println("index selected:", index, "for", args.ProbeId)
 	go waitOnProbe(args.ProbeId, index) //wait for probe to either time out, or finish.
 	return nil
 }
 
+/*Waits for a probe to return. If it doesn't return in time, it frees up its range.*/
 func waitOnProbe(probeId string, index int) error {
 	probeTimer := time.NewTimer(60 * time.Second)
 	for {
 		select {
 		case <- unlockPlease[index]: //second http request occured, result stored
 			fmt.Println(allIPs.ToCSV()) //TODO remove, this is test
-			//TODO call function which frees up the range again
 		case <- probeTimer.C:
 			log.Println("probe took too long")
-			go freeRange(index)
+			go freeRange(index) //free the range, change the id in case the probe comes back later
 			return errors.New("probe timeout")
 		}
 	}
 }
 
-
+//frees up a range lent to a monitor that timed out, removing that monitor's id.
 func freeRange(index int) {
 	thisRange := ipTable[index] //look in the table for the ip range
 	thisRange.lock.Lock()
@@ -188,10 +190,10 @@ func connect(port string) {
 func test(numRanges int) {
 	ipTable = make([]*ipRange,numRanges)
 	for i := 0; i < numRanges; i++ {
-		b := make([][]byte, 1)
-		b[0] = []byte{byte(i), byte(i), byte(i), byte(i)}
+		b := make([][4]byte, 1)
+		b[0] = [4]byte{byte(i), byte(i), byte(i), byte(i)}
 		stopz := set.NewStringSet()
-		ipTable[i] = &ipRange{prefixes:b, stops:stopz, currentProbe:""}
+		ipTable[i] = &ipRange{addresses:b, stops:stopz, currentProbe:""}
 	}
 	seen := make(map[string]*set.IntSet)
 	seenRanges = &seenMap{rangesSeenBy:seen} //TODO make this readable

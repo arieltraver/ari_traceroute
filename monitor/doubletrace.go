@@ -42,9 +42,10 @@ type IpArgs struct {
 }
 
 type IpReply struct {
-	Ips [][]byte
+	Ips [][4]byte
 	Index int
-	NewGSS *set.StringSet
+	Stops *set.StringSet
+	Ok bool
 }
 
 type ResultArgs struct {
@@ -94,7 +95,7 @@ func getIpRange(leader *rpc.Client, id string) (int, bool) {
 	if !reply.Ok {
 		return -1, false
 	}
-	GSS.ChangeSetTo(reply.NewGSS)
+	GSS.ChangeSetTo(reply.Stops)
 	return reply.Index, true
 }
 
@@ -626,10 +627,14 @@ func loop(id string) {
 		log.Fatal(err)
 	}
 	fmt.Println("connected to:", ADDRESS_STRING)
+	GSS = set.NewSafeStringSet()
+	LSS = set.NewSafeStringSet()
+	newNodes = set.NewSafeStringSet()
 	//continue to request ranges until you run out.
 	for {
 		indx, ok := getIpRange(leader, id)
 		if !ok { //something happened, like perhaps we reached the last node.
+			fmt.Println("halting the loop...")
 			return
 		}
 		sendProbes()
