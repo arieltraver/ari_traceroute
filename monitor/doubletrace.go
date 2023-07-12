@@ -1,3 +1,7 @@
+/*
+borrows code directly from https://pkg.go.dev/github.com/aeden/traceroute 
+as I needed to edit some of its internal methods
+*/
 package main
 
 import (
@@ -14,7 +18,6 @@ import (
 	"net/http"
 )
 
-const BITSETSIZE uint = 32
 const DEFAULT_PORT int = 33434
 const DEFAULT_MAX_HOPS = 64
 const DEFAULT_FIRST_HOP = 1
@@ -24,32 +27,89 @@ const DEFAULT_PACKET_SIZE = 52
 const FLOOR = 6
 const CEILING = 12
 
-var ipRange []string
+var ipRange [][]byte
 var GSS *set.SafeSet
 var LSS *set.SafeSet
 var newNodes *set.SafeSet
 
 type Monitor int
 
-type ProbeArgs struct {
-	IpRange []string //Todo: condense this
-}
-type ProbeReply struct {
-	Received bool
+type IpArgs struct {
+	ProbeId string
 }
 
-type ResultArgs int
+type IpReply struct {
+	Ips [][]byte
+	Index int
+	NewGSS *set.StringSet
+}
+
+type ResultArgs {
+	NewGSS *set.StringSet,
+	News *set.StringSet,
+	id string,
+	index int
+}
 
 type ResultReply struct {
 	News *set.StringSet
 	NewGSS *set.StringSet
 }
 
-//TODO: decide if these two should be combined or async
 
-//invoked by leader on this node. sends leader the results of probing
+func dialLeader(address string) (*rpc.Client, error) {
+	client, err := rpc.DialHTTP("tcp", address)
+	if err != nil {
+		connectTimer := time.NewTimer(800 * time.Millisecond)
+		for {
+			select {
+			case <- connectTimer.C:
+				return nil, errors.New("failed to connect within time limit")
+			default:
+				client, err = rpc.DialHTTP("tcp", address)
+				if err == nil {
+					return client, nil
+				} else {
+					return nil, err
+				}
+			}
+		}
+	}
+	return client, nil
+}
+
+func getIPRange(leader *rpc.Client, id string) int {
+	arguments := IpArgs {
+		ProbeId:id,
+	}
+	reply := IpReply{}
+	err := leader.Call("Leader.GetIPs", arguments, &reply)
+	if err != nil {
+		log.Fatal(err)
+	}
+	GSS.ChangeSetTo(reply.NewGSS)
+	return reply.Index
+}
+
+/**return the results of a trace to the leader**/
+func sendIPRange(leader *rpc.Client, index int, id string) {
+	fmt.Println(GSS.ToCSV())
+	arguments := ResultArgs{NewGSS:GSS.Set().(*set.StringSet),News:newNodes.Set().(*set.StringSet),Id:id, Index:index}
+	reply := ResultReply{}
+	err := leader.Call("Leader.TransferResults", arguments, &reply)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if reply.Ok {
+		fmt.Println("Transfer success")
+	}
+}
+
+
+/**invoked by leader on this node. sends leader the results of probing
 func (*Monitor) GetResults(args ResultArgs, reply *ResultReply) error {
 	reply.News = newNodes.Set().(*set.StringSet)
+	reply.NewGSS = GSS.Set().(*set.StringSet)
 	GSS.Wipe()
 	newNodes.Wipe()
 	//LSS is never wiped because it's useful to this probe.
@@ -64,14 +124,14 @@ func (*Monitor) ProbeIps(args ProbeArgs, reply *ProbeReply) error {
 	return nil
 }
 
-//doubletree addon from paper, helps prevent overburdening destinations
+//doubletree addon from second paper, helps prevent overburdening destinations
 func (options *TracerouteOptions) SetMaxHopsRandom(floor int, ceiling int) {
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
 	i := r1.Intn(ceiling - floor)
 	i += floor
 	options.maxHops = i
-}
+}**/
 
 //setter
 func (options *TracerouteOptions) SetMaxHops(maxHops int) {

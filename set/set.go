@@ -177,6 +177,12 @@ func NewSafeStringSet() *SafeSet {
 	return ss
 }
 
+func (ss *SafeSet) ChangeSetTo(s Set) {
+	ss.lock.Lock()
+	defer ss.lock.Unlock()
+	ss.st = s
+}
+
 func NewSafeIntSet() *SafeSet {
 	intSet := NewIntSet()
 	ss := &SafeSet{st:intSet}
