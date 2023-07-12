@@ -18,6 +18,8 @@ import (
 	"net/http"
 )
 
+//change when testing on AWS etc
+const ADDRES_STRING string = "localhost:4000"
 const DEFAULT_PORT int = 33434
 const DEFAULT_MAX_HOPS = 64
 const DEFAULT_FIRST_HOP = 1
@@ -27,7 +29,7 @@ const DEFAULT_PACKET_SIZE = 52
 const FLOOR = 6
 const CEILING = 12
 
-var ipRange [][]byte
+var ipRange [][4]byte
 var GSS *set.SafeSet
 var LSS *set.SafeSet
 var newNodes *set.SafeSet
@@ -44,16 +46,17 @@ type IpReply struct {
 	NewGSS *set.StringSet
 }
 
-type ResultArgs {
-	NewGSS *set.StringSet,
-	News *set.StringSet,
-	id string,
-	index int
+type ResultArgs struct {
+	NewGSS *set.StringSet
+	News *set.StringSet
+	Id string
+	Index int
 }
 
 type ResultReply struct {
 	News *set.StringSet
 	NewGSS *set.StringSet
+	Ok bool
 }
 
 
@@ -123,6 +126,7 @@ func (*Monitor) ProbeIps(args ProbeArgs, reply *ProbeReply) error {
 	go sendProbes() //concurrent: leader will not be waiting around
 	return nil
 }
+**/
 
 //doubletree addon from second paper, helps prevent overburdening destinations
 func (options *TracerouteOptions) SetMaxHopsRandom(floor int, ceiling int) {
@@ -131,7 +135,7 @@ func (options *TracerouteOptions) SetMaxHopsRandom(floor int, ceiling int) {
 	i := r1.Intn(ceiling - floor)
 	i += floor
 	options.maxHops = i
-}**/
+}
 
 //setter
 func (options *TracerouteOptions) SetMaxHops(maxHops int) {
@@ -300,7 +304,7 @@ func sendProbes() {
 	wg.Wait()
 }
 
-func probeAddr(wg *sync.WaitGroup, ip string) {
+func probeAddr(wg *sync.WaitGroup, ip [4]byte) {
 	defer wg.Done()
 	options := &TracerouteOptions{}
 	options.SetMaxHopsRandom(FLOOR, CEILING)
@@ -339,11 +343,10 @@ func probeAddr(wg *sync.WaitGroup, ip string) {
 //
 // Returns a TracerouteResult which contains an array of hops. Each hop includes
 // the elapsed time and its IP address.
-func probeForward(socketAddr [4]byte, dest string, options *TracerouteOptions, c ...chan TracerouteHop) (result TracerouteResult, err error) {
+func probeForward(socketAddr [4]byte, dest [4]byte, options *TracerouteOptions, c ...chan TracerouteHop) (result TracerouteResult, err error) {
 	fmt.Println("probing forwards")
 	result.Hops = make([]TracerouteHop, 0, options.maxHops) //prevent resizing
-	destAddr, err := destAddr(dest)
-	result.DestinationAddress = destAddr
+	result.DestinationAddress = dest
 	if err != nil {
 		return
 	}
@@ -395,7 +398,7 @@ func probeForward(socketAddr [4]byte, dest string, options *TracerouteOptions, c
 			  print out the checksum each time
 		*/
 		// Send a single null byte UDP packet
-		syscall.Sendto(sendSocket, []byte{0x0}, 0, &syscall.SockaddrInet4{Port: options.Port(), Addr: destAddr})
+		syscall.Sendto(sendSocket, []byte{0x0}, 0, &syscall.SockaddrInet4{Port: options.Port(), Addr: dest})
 
 		var p = make([]byte, options.PacketSize())
 		n, from, err := syscall.Recvfrom(recvSocket, p, 0)
@@ -416,10 +419,10 @@ func probeForward(socketAddr [4]byte, dest string, options *TracerouteOptions, c
 			
 			retry = 0
 
-			hopDestString := hop.AddressString() + "-" + addressString(destAddr)
+			hopDestString := hop.AddressString() + "-" + addressString(dest)
 
 			// modification added here to stop if it hits node in GSS or LSS
-			if ttl >= options.MaxHops() || currAddr == destAddr || GSS.Contains(hopDestString) {
+			if ttl >= options.MaxHops() || currAddr == dest || GSS.Contains(hopDestString) {
 				if GSS.Contains(hopDestString) {
 					fmt.Println("found seen node", hopDestString )
 				}
@@ -544,7 +547,7 @@ func probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop, options *Tr
 }
 
 
-func testJustProbes(addr string) {
+func testJustProbes(addr [4]byte) {
 	GSS = set.NewSafeStringSet()
 	LSS = set.NewSafeStringSet()
 	newNodes = set.NewSafeStringSet()
@@ -584,12 +587,18 @@ func testConcurrent() {
 	GSS = set.NewSafeStringSet()
 	LSS = set.NewSafeStringSet()
 	newNodes = set.NewSafeStringSet()
-	ips := []string{"192.124.249.164", "107.21.104.61", "104.26.11.229", "108.139.7.178"}
+	ips := [][4]byte {
+		{192, 124, 249, 164},
+		{107, 21, 104, 61},
+		{104,26,11,229},
+		{108,139,7,178},
+	}
 	ipRange = ips[:]
 	sendProbes()
 	fmt.Println("-------GSS-------")
 }
 
+/*
 func connect(port string) {
 	api := new(Monitor)
 	err := rpc.Register(api)
@@ -601,7 +610,19 @@ func connect(port string) {
 	log.Printf("serving rpc on port" + port)
 }
 
+
+func test(id string) {
+	leader, err := dialLeader(ADDRESS_STRING)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("connected to:", ADDRESS_STRING)
+	index := getIPRange(leader, id)
+	sendIPRange(leader, index, id)
+}
+*/
+
 func main(){
-	testJustProbes("bugsincyberspace.com")
-	connect("3000")
+	batterygr := [4]byte{195,201,241,126}
+	testJustProbes(batterygr)
 }
