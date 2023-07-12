@@ -15,7 +15,7 @@ import (
 	"time"
 	"github.com/arieltraver/ari_traceroute/set"
 	"net/rpc"
-	"net/http"
+	//"net/http"
 )
 
 //change when testing on AWS etc
@@ -462,10 +462,16 @@ func probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop, options *Tr
 	tv := syscall.NsecToTimeval(1000 * 1000 * timeoutMs)
 
 	retry := 0
-	currentHop := len(forwardHops) - 1
+	currentHop := len(forwardHops) - 2
+	if currentHop < 0 {return}
 	for {
 		hopAddr := forwardHops[currentHop].Address //probe the address
 		fmt.Println("backwards:", hopAddr)
+		resultStr := addressString(hopAddr) +"-"+ source
+		if LSS.Contains(resultStr) {
+			fmt.Println("found visited already")
+			return
+		}
 		// Set up the socket to receive inbound packets
 		recvSocket, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_RAW, syscall.IPPROTO_ICMP)
 		if err != nil {
@@ -524,8 +530,8 @@ func probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop, options *Tr
 			notify(hop, c)
 
 			result.Hops = append(result.Hops, hop)
-			GSS.Add(addressString(hopAddr) +"-"+ source) //modification: add to GSS while probing back
-			LSS.Add(addressString(hopAddr) +"-" + source) //add to LSS while probing back
+			GSS.Add(resultStr) //modification: add to GSS while probing back
+			LSS.Add(resultStr) //add to LSS while probing back
 
 			currentHop--
 			retry = 0
