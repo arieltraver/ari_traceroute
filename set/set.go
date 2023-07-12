@@ -218,11 +218,11 @@ func (s *SafeSet) ToCSV() string {
 }
 
 
-func (s *SafeSet) Set() *Set {
+func (s *SafeSet) Set() Set {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	st := s.st
-	return &st
+	return st
 }
 
 //replaces the set with a new eMpty set

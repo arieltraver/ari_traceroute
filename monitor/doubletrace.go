@@ -25,7 +25,7 @@ const FLOOR = 6
 const CEILING = 12
 
 var ipRange []string
-var GSS *set.SafeIPSet
+var GSS *set.SafeSet
 var LSS *set.SafeSet
 var newNodes *set.SafeSet
 
@@ -41,16 +41,16 @@ type ProbeReply struct {
 type ResultArgs int
 
 type ResultReply struct {
-	News *set.Set //TODO: limit size to be equivalent to bloom filter
-	NewGSS *set.Set
+	News *set.StringSet
+	NewGSS *set.StringSet
 }
 
 //TODO: decide if these two should be combined or async
 
 //invoked by leader on this node. sends leader the results of probing
 func (*Monitor) GetResults(args ResultArgs, reply *ResultReply) error {
-	reply.News = newNodes.Set()
-	GSS.Wipe(BITSETSIZE)
+	reply.News = newNodes.Set().(*set.StringSet)
+	GSS.Wipe()
 	newNodes.Wipe()
 	//LSS is never wiped because it's useful to this probe.
 	return nil 
@@ -359,15 +359,15 @@ func probeForward(socketAddr [4]byte, dest string, options *TracerouteOptions, c
 			hopDestString := hop.AddressString() + "-" + addressString(destAddr)
 
 			// modification added here to stop if it hits node in GSS or LSS
-			if ttl >= options.MaxHops() || currAddr == destAddr || GSS.CheckString(hopDestString) {
-				if GSS.CheckString(hopDestString) {
+			if ttl >= options.MaxHops() || currAddr == destAddr || GSS.Contains(hopDestString) {
+				if GSS.Contains(hopDestString) {
 					fmt.Println("found seen node", hopDestString )
 				}
 				closeNotify(c)
 				return result, nil
 			}
 			result.Hops = append(result.Hops, hop)
-			GSS.AddString(hopDestString) //add to global stop set
+			GSS.Add(hopDestString) //add to global stop set
 		} else {
 			retry += 1
 			if retry > options.Retries() {
@@ -461,7 +461,7 @@ func probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop, options *Tr
 			notify(hop, c)
 
 			result.Hops = append(result.Hops, hop)
-			GSS.AddString(addressString(hopAddr) +"-"+ source) //modification: add to GSS while probing back
+			GSS.Add(addressString(hopAddr) +"-"+ source) //modification: add to GSS while probing back
 			LSS.Add(addressString(hopAddr) +"-" + source) //add to LSS while probing back
 
 			currentHop--
@@ -485,9 +485,9 @@ func probeBackwards(socketAddr [4]byte, forwardHops []TracerouteHop, options *Tr
 
 
 func testJustProbes(addr string) {
-	GSS = set.NewSafeIPSet(BITSETSIZE)
-	LSS = set.NewSafeSet()
-	newNodes = set.NewSafeSet()
+	GSS = set.NewSafeStringSet()
+	LSS = set.NewSafeStringSet()
+	newNodes = set.NewSafeStringSet()
 	options := &TracerouteOptions{}
 	options.SetMaxHopsRandom(FLOOR, CEILING)
 	fmt.Println("max hops is", options.maxHops)
@@ -521,9 +521,9 @@ func testJustProbes(addr string) {
 }
 
 func testConcurrent() {
-	GSS = set.NewSafeIPSet(BITSETSIZE)
-	LSS = set.NewSafeSet()
-	newNodes = set.NewSafeSet()
+	GSS = set.NewSafeStringSet()
+	LSS = set.NewSafeStringSet()
+	newNodes = set.NewSafeStringSet()
 	ips := []string{"192.124.249.164", "107.21.104.61", "104.26.11.229", "108.139.7.178"}
 	ipRange = ips[:]
 	sendProbes()

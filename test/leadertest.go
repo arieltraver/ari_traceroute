@@ -9,8 +9,6 @@ import (
 	//"os"
 )
 
-var BITSETSIZE uint = 32
-
 type ResultArgs struct {
 	NewGSS *set.SafeSet
 	News *set.StringSet

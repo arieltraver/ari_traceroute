@@ -15,7 +15,6 @@ import (
 	"fmt"
 )
 
-const BITSETSIZE uint = 16 //2^16 bits --> one bit for each possible IP, sliced by first two bytes.
 const MONITORS int = 5 //number of chunks to divide file into
 const CHUNKS int = 10
 var allIPs *set.SafeSet
