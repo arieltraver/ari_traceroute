@@ -27,21 +27,21 @@ var seenRanges *seenMap //keeps track of IPs and which has seen what
 type ipRange struct {
 	prefixes [][]byte //must be the same length as stops, 1-1 correspondence.
 	currentProbe  string
-	stops []*set.BitSet
+	stops *set.Set
 	lock sync.Mutex
 }
 
 func (i *ipRange) Size() int {
 	i.lock.Lock()
 	defer i.lock.Unlock()
-	l := len(i.stops)
+	l := i.stops.
 	return l
 }
 
 type Leader int
 
 type ResultArgs struct {
-	NewGSS *set.BitSet
+	NewGSS *set.SafeSet
 	News *set.Set
 	Id string
 	Index int
@@ -122,7 +122,7 @@ func (*Leader) TransferResults(args ResultArgs, reply *ResultReply) error {
 	}
 	thisRange.currentProbe = "" //no id associated here anymore
 
-	thisRange.stops.Union(args.NewGSS) //register new (hop, dest) pairs to this range of IPs
+	thisRange.stops.SafeUnionWith(args.NewGSS) //register new (hop, dest) pairs to this range of IPs
 	allIPs.UnionWith(args.News) //register all new, never-before-seen nodes
 	seenRanges.lock.Lock()
 	defer seenRanges.lock.Unlock()
