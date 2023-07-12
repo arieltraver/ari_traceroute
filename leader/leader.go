@@ -121,8 +121,9 @@ func (*Leader) TransferResults(args ResultArgs, reply *ResultReply) error {
 		return errors.New("ips in use by other probe")
 	}
 	thisRange.currentProbe = "" //no id associated here anymore
-
-	thisRange.stops.SafeUnionWith(args.NewGSS) //register new (hop, dest) pairs to this range of IPs
+	args.NewGSS.lock.Lock()
+	thisRange.stops.UnionWith(args.NewGSS.Set()) //register new (hop, dest) pairs to this range of IPs
+	args.NewGSS.lock.
 	allIPs.UnionWith(args.News) //register all new, never-before-seen nodes
 	seenRanges.lock.Lock()
 	defer seenRanges.lock.Unlock()

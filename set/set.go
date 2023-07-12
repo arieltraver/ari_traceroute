@@ -7,13 +7,16 @@ import (
 )
 
 type Set interface {
-	UnionWith(Set)
 	Add(any)
 	Remove(any)
 	Contains(any) bool
 	ToCSV() string
 	Wipe()
+	UnionWith(Set)
 }
+
+
+
 
 //---------IntSet-------------------------------------------------//
 
@@ -36,12 +39,12 @@ func (s *IntSet) ToCSV() string {
 	return str.String()
 }
 
-func (s *IntSet) Add(i int) {
-	s.Mp[i] = struct{}{}
+func (s *IntSet) Add(i any) {
+	s.Mp[i.(int)] = struct{}{}
 }
 
-func (s *IntSet) Remove(i int) {
-	delete(s.Mp, i)
+func (s *IntSet) Remove(i any) {
+	delete(s.Mp, i.(int))
 }
 
 func (s *IntSet) Wipe() {
@@ -49,14 +52,14 @@ func (s *IntSet) Wipe() {
 	s.Mp = m
 }
 
-func (s1 *IntSet) UnionWith(s2 *IntSet) {
-	for key, _ := range(s2.Mp) {
+func (s1 *IntSet) UnionWith(s2 Set) {
+	for key, _ := range(s2.(*IntSet).Mp) {
 		s1.Mp[key] = struct{}{}
 	}
 }
 
-func (s *IntSet) Contains(i int) bool {
-	_, ok := s.Mp[i]
+func (s *IntSet) Contains(i any) bool {
+	_, ok := s.Mp[i.(int)]
 	return ok
 }
 
@@ -82,8 +85,8 @@ func (s *StringSet) Size() int {
 }
 
 /*unlock the Set*/
-func (s *StringSet) Contains(item string) bool {
-	_, ok := s.Mp[item]
+func (s *StringSet) Contains(item any) bool {
+	_, ok := s.Mp[item.(string)]
 	return ok
 }
 
@@ -92,17 +95,17 @@ func (s *StringSet) Wipe() {
 	s.Mp = m
 }
 
-func (s *StringSet) Add(item string) {
-	s.Mp[item] = struct{}{}
+func (s *StringSet) Add(item any) {
+	s.Mp[item.(string)] = struct{}{}
 }
 
-func (s *StringSet) Remove(item string) {
-	delete(s.Mp, item)
+func (s *StringSet) Remove(item any) {
+	delete(s.Mp, item.(string))
 }
 
 //expands the Set into its union with another Set
-func (s1 *StringSet) UnionWith(s2 *StringSet) {
-	for key, _ := range(s2.Mp) {
+func (s1 *StringSet) UnionWith(s2 Set) {
+	for key, _ := range(s2.(*StringSet).Mp) {
 		s1.Mp[key] = struct{}{}
 	}
 }
@@ -169,13 +172,19 @@ type SafeSet struct {
 	lock sync.Mutex
 }
 
-func (s *SafeSet) Add(item string) {
+func NewSafeStringSet() *SafeSet {
+	strset := NewStringSet()
+	ss := &SafeSet{st:strset}
+	return ss
+}
+
+func (s *SafeSet) Add(item any) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.st.Add(item)
 }
 
-func (s *SafeSet) Remove(item string) {
+func (s *SafeSet) Remove(item any) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.st.Remove(item)
