@@ -6,11 +6,11 @@ import (
 	"log"
 	"time"
 	"github.com/arieltraver/ari_traceroute/set"
-	//"os"
+	"os"
 )
 
 type ResultArgs struct {
-	NewGSS *set.SafeSet
+	NewGSS *set.StringSet
 	News *set.StringSet
 	Id string
 	Index int
@@ -25,7 +25,7 @@ type IpArgs struct {
 }
 
 type IpReply struct {
-	Ips []string
+	Ips [][]byte
 	Index int
 }
 
@@ -74,10 +74,10 @@ func sendIPRange(leader *rpc.Client, index int, id string) {
 	newGSS := set.NewSafeStringSet()
 	newNodes.Add("node1_" + id)
 	newNodes.Add("node2_" + id)
-	newGSS.Add([]byte{byte(123), byte(22), byte(4), byte(200)})
-	newGSS.Add([]byte{byte(1), byte(220), byte(43), byte(10)})
+	newGSS.Add("123.22.4.200");
+	newGSS.Add("1.220.43.10");
 	fmt.Println(newGSS.ToCSV())
-	arguments := ResultArgs{NewGSS:newGSS, News:newNodes, Id:id, Index:index}
+	arguments := ResultArgs{NewGSS:newGSS.Set().(*set.StringSet), News:newNodes, Id:id, Index:index}
 	reply := ResultReply{}
 	err := leader.Call("Leader.TransferResults", arguments, &reply)
 	if err != nil {
@@ -102,13 +102,11 @@ func testAll(id string) {
 }
 
 func main() {
-	/**
 	if len(os.Args) <= 1 {
 		fmt.Println("usage: go run leadertest.go {id}")
 	}
 	id := os.Args[1]
 	testAll(id)
-	**/
 	//set.TestNoRoutine()
-	set.TestRoutines()
+	//set.TestRoutines()
 }

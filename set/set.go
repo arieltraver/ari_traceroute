@@ -164,8 +164,6 @@ func (s *StringSet) ToCSV() string {
 }
 
 
-
-
 //---------SafeSet-------------------------------------------------//
 
 type SafeSet struct {

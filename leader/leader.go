@@ -40,7 +40,7 @@ func (i *ipRange) Size() int {
 type Leader int
 
 type ResultArgs struct {
-	NewGSS *set.SafeSet
+	NewGSS *set.StringSet
 	News *set.StringSet
 	Id string
 	Index int
@@ -59,7 +59,6 @@ type IpReply struct {
 	Stops *set.StringSet
 	Index int
 }
-
 
 //each id is associated with an index in the table.
 //the table records which probes have already hit which addresses.
@@ -120,8 +119,9 @@ func (*Leader) TransferResults(args ResultArgs, reply *ResultReply) error {
 		}
 		return errors.New("ips in use by other probe")
 	}
+	fmt.Println("result:", args.NewGSS.ToCSV()) //TODO: remove this test
 	thisRange.currentProbe = "" //no id associated here anymore
-	thisRange.stops.UnionWith(args.NewGSS.Set()) //register new (hop, dest) pairs to this range of IPs
+	thisRange.stops.UnionWith(args.NewGSS) //register new (hop, dest) pairs to this range of IPs
 	allIPs.UnionWith(args.News) //register all new, never-before-seen nodes
 	seenRanges.lock.Lock()
 	defer seenRanges.lock.Unlock()
@@ -192,15 +192,15 @@ func test(numRanges int) {
 	seen := make(map[string]*set.IntSet)
 	seenRanges = &seenMap{rangesSeenBy:seen} //TODO make this readable
 	allIPs = set.NewSafeStringSet()
-	unlockPlease = make([]chan bool, len(ipTable))
+	unlockPlease = make([]chan bool, numRanges)
 	for i, _ := range(unlockPlease) {
 		unlockPlease[i] = make(chan bool, 1)
 	}
-
-
 	go connect("localhost:4000")
+	time.Sleep(60 * time.Second)
 
 }
 
 func main() {
+	test(10)
 }
