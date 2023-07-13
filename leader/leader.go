@@ -142,6 +142,7 @@ func (*Leader) GetIPs(args IpArgs, reply *IpReply) error {
 		reply.Ok = false
 		return errors.New("could not find new IP range for that node.")
 	}
+	fmt.Println("ip range is:", ips)
 	reply.Ips = ips //node gets this
 	reply.Stops = stops
 	reply.Index = index
@@ -153,7 +154,7 @@ func (*Leader) GetIPs(args IpArgs, reply *IpReply) error {
 
 /*Waits for a probe to return. If it doesn't return in time, it frees up its range.*/
 func waitOnProbe(probeId string, index int) error {
-	probeTimer := time.NewTimer(60 * time.Second)
+	probeTimer := time.NewTimer(90 * time.Second)
 	for {
 		select {
 		case <- unlockPlease[index]: //second http request occured, result stored
@@ -203,7 +204,7 @@ func test(numRanges int) {
 		unlockPlease[i] = make(chan bool, 1)
 	}
 	go connect("localhost:4000")
-	time.Sleep(60 * time.Second)
+	time.Sleep(120 * time.Second)
 
 }
 

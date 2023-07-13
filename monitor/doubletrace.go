@@ -95,6 +95,7 @@ func getIpRange(leader *rpc.Client, id string) (int, bool) {
 	if !reply.Ok {
 		return -1, false
 	}
+	ipRange = reply.Ips
 	GSS.ChangeSetTo(reply.Stops)
 	return reply.Index, true
 }
@@ -301,6 +302,7 @@ func closeNotify(channels []chan TracerouteHop) {
 }
 
 func sendProbes() {
+	fmt.Println("ipRange is", ipRange)
 	var wg sync.WaitGroup
 	wg.Add(len(ipRange)) //one thread per IP
 	for _, ip := range(ipRange){
